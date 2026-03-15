@@ -708,17 +708,18 @@ export default function SubjectDetailPage() {
                       </div>
                     ))}
                   </div>
-                  {user
-                    ? <Link to={`/quiz/${quiz.id}`} className="btn-lg btn-blue w-full justify-center gap-2">
-                        Start Quiz <ChevronRight size={18}/>
-                      </Link>
-                    : <div className="text-center space-y-3">
-                        <p className="text-sm text-gray-500">Login to take the quiz and save your score</p>
-                        <Link to="/login" className="btn-lg btn-blue gap-2 inline-flex">
-                          <Lock size={16}/> Login to Start
-                        </Link>
-                      </div>
-                  }
+                  <div className="flex items-center justify-between bg-blue-50 rounded-xl p-4">
+                    <div>
+                      <p className="font-semibold text-blue-900 text-sm">Ready to test yourself?</p>
+                      <p className="text-xs text-blue-600 mt-0.5">
+                        {quiz.questions?.length || 0} questions · Pass {quiz.pass_mark_percent}%
+                      </p>
+                    </div>
+
+                    <Link to={`/quiz/${quiz.id}`} className="btn-md btn-blue gap-2">
+                      Take Quiz <ChevronRight size={15}/>
+                    </Link>
+                  </div>
                   {/* Next / Prev unit — only at bottom of quiz */}
                   {allUnits.length > 1 && (
                     <div className="flex gap-3 mt-6 pt-5 border-t border-gray-100">
