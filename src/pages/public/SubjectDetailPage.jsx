@@ -133,9 +133,17 @@ const MD = {
 }
 
 // ── Notes viewer with topic pills ──────────────────────────────────────────
-function NotesViewer({ content }) {
+function NotesViewer({ content, onTopicChange, onComplete }) {
   const sections = parseSections(content)
   const [activeTopic, setActiveTopic] = useState(0)
+
+  const goTopic = (i) => {
+    setActiveTopic(i)
+    onTopicChange && onTopicChange(i, sections.length)
+    if (i === sections.length - 1) {
+      // reached last topic
+    }
+  }
 
   if (!sections.length) return (
     <EmptyState icon={FileText} title="Notes coming soon" desc="Notes haven't been published yet." />
@@ -154,7 +162,7 @@ function NotesViewer({ content }) {
           const SIcon = sst.I
           const isActive = activeTopic === i
           return (
-            <button key={i} onClick={() => setActiveTopic(i)}
+            <button key={i} onClick={() => goTopic(i)}
               className={clsx(
                 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150 border-2',
                 isActive
@@ -188,13 +196,13 @@ function NotesViewer({ content }) {
           {/* prev / next within topics */}
           <div className="ml-auto flex items-center gap-1">
             <button disabled={activeTopic === 0}
-              onClick={() => setActiveTopic(i => i - 1)}
+              onClick={() => goTopic(activeTopic - 1)}
               className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-200 disabled:opacity-30 transition-all">
               <ChevronLeft size={15} />
             </button>
             <span className="text-xs text-gray-400 px-1">{activeTopic + 1}/{sections.length}</span>
             <button disabled={activeTopic === sections.length - 1}
-              onClick={() => setActiveTopic(i => i + 1)}
+              onClick={() => goTopic(activeTopic + 1)}
               className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-200 disabled:opacity-30 transition-all">
               <ChevronRight size={15} />
             </button>
@@ -332,6 +340,8 @@ export default function SubjectDetailPage() {
   const [expanded, setExpanded]       = useState({})
   const [activeUnit, setActiveUnit]   = useState(null)
   const [tab, setTab]                 = useState('video') // video | notes | flashcards | quiz
+  const [notesTopicIdx, setNotesTopicIdx] = useState(0)
+  const [notesTopicTotal, setNotesTopicTotal] = useState(0)
   const [activeLang, setActiveLang]   = useState('english')
   const [unitContent, setUnitContent] = useState([])
   const [quiz, setQuiz]               = useState(null)
@@ -377,6 +387,8 @@ export default function SubjectDetailPage() {
     // default tab: video if has video, else notes
     const hasVideo = cRes.data?.some(c => c.video_url?.trim())
     setTab(hasVideo ? 'video' : 'notes')
+    setNotesTopicIdx(0)
+    setNotesTopicTotal(0)
     setContentLoading(false)
   }
 
@@ -406,6 +418,18 @@ export default function SubjectDetailPage() {
     { key: 'flashcards', icon: Zap,         label: 'Flashcards'  },
     { key: 'quiz',       icon: HelpCircle,  label: 'Quiz',       badge: quiz?.questions?.length, disabled: !quiz },
   ].filter(t => t.show !== false)
+
+  // Go to next tab in sequence
+  const goNextTab = () => {
+    const currentIdx = TABS.findIndex(t => t.key === tab)
+    const next = TABS[currentIdx + 1]
+    if (next && !next.disabled) setTab(next.key)
+  }
+  const isLastTab = TABS.findIndex(t => t.key === tab) === TABS.length - 1
+  const nextTabInfo = TABS[TABS.findIndex(t => t.key === tab) + 1]
+
+  // Notes: is student on last topic?
+  const notesOnLastTopic = notesTopicTotal > 0 && notesTopicIdx >= notesTopicTotal - 1
 
   if (loading) return (
     <div className="max-w-7xl mx-auto px-4 py-10">
@@ -521,42 +545,84 @@ export default function SubjectDetailPage() {
                   </div>
                 </div>
 
-                {/* Main tab bar */}
+                {/* Main tab bar with step numbers */}
                 <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
-                  {TABS.map(t => (
+                  {TABS.map((t, ti) => (
                     <button key={t.key} onClick={() => !t.disabled && setTab(t.key)}
                       disabled={t.disabled}
                       className={clsx(
-                        'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium transition-all',
+                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-medium transition-all',
                         tab === t.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
                         t.disabled && 'opacity-40 cursor-not-allowed'
                       )}>
-                      <t.icon size={15} />
+                      <div className={clsx(
+                        'w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
+                        tab === t.key ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
+                      )}>{ti + 1}</div>
                       <span className="hidden sm:inline">{t.label}</span>
-                      {t.badge > 0 && <span className="bdg-blue text-xs">{t.badge}</span>}
+                      {t.badge > 0 && <span className="bdg-blue text-xs hidden sm:inline">{t.badge}</span>}
                     </button>
                   ))}
+                </div>
+                {/* Step progress bar */}
+                <div className="mt-2">
+                  <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                      style={{ width: `${((TABS.findIndex(t => t.key === tab) + 1) / TABS.length) * 100}%` }}/>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Step {TABS.findIndex(t => t.key === tab) + 1} of {TABS.length}
+                    {tab === 'notes' && notesTopicTotal > 0 && ` · Topic ${notesTopicIdx + 1} of ${notesTopicTotal}`}
+                  </p>
                 </div>
               </div>
 
               {/* ── TAB: Video ── */}
               {tab === 'video' && cur?.video_url && (
-                <div className="card p-1 overflow-hidden animate-fade-in">
-                  <VideoPlayer url={cur.video_url} />
+                <div className="space-y-3 animate-fade-in">
+                  <div className="card p-1 overflow-hidden">
+                    <VideoPlayer url={cur.video_url} />
+                  </div>
+                  <div className="flex justify-end">
+                    <button onClick={goNextTab}
+                      className="btn-md btn-blue gap-2">
+                      Next: Notes <ChevronRight size={16}/>
+                    </button>
+                  </div>
                 </div>
               )}
 
               {/* ── TAB: Notes (with topic pills) ── */}
               {tab === 'notes' && (
-                <div className="card p-6 animate-fade-in">
-                  <NotesViewer content={cur?.note_content || ''} />
+                <div className="space-y-3 animate-fade-in">
+                  <div className="card p-6">
+                    <NotesViewer content={cur?.note_content || ''} onTopicChange={(i, total) => { setNotesTopicIdx(i); setNotesTopicTotal(total) }} />
+                  </div>
+                  {notesOnLastTopic && nextTabInfo && (
+                    <div className="flex justify-end">
+                      <button onClick={goNextTab}
+                        className="btn-md btn-blue gap-2">
+                        Next: {nextTabInfo.label} <ChevronRight size={16}/>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* ── TAB: Flashcards ── */}
               {tab === 'flashcards' && (
-                <div className="card p-6 animate-fade-in">
-                  <FlashcardDeck unitId={activeUnit} language={activeLang} />
+                <div className="space-y-3 animate-fade-in">
+                  <div className="card p-6">
+                    <FlashcardDeck unitId={activeUnit} language={activeLang} />
+                  </div>
+                  {nextTabInfo && !nextTabInfo.disabled && (
+                    <div className="flex justify-end">
+                      <button onClick={goNextTab}
+                        className="btn-md btn-blue gap-2">
+                        Next: {nextTabInfo.label} <ChevronRight size={16}/>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

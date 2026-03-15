@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import { Menu, X, LogOut, LayoutDashboard, BookOpen, Shield } from 'lucide-react'
+import { Menu, X, LogOut, LayoutDashboard, BookOpen, Shield, Home } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function Navbar() {
@@ -20,12 +20,12 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
 
-        {/* Logo */}
+        {/* Logo — always show name on mobile too */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm">
             <span className="text-white font-bold text-sm">R</span>
           </div>
-          <span className="font-bold text-gray-900 text-lg hidden sm:block">
+          <span className="font-bold text-gray-900 text-lg">
             RevWise<span className="text-blue-600">.lk</span>
           </span>
         </Link>
@@ -36,7 +36,7 @@ export default function Navbar() {
           <NavLink to="/subjects" className={navCls}>Subjects</NavLink>
         </nav>
 
-        {/* Right */}
+        {/* Right side */}
         <div className="flex items-center gap-2">
           {user ? (
             <>
@@ -69,7 +69,7 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Mobile toggle */}
+          {/* Mobile hamburger */}
           <button onClick={() => setOpen(!open)} className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100">
             {open ? <X size={20}/> : <Menu size={20}/>}
           </button>
@@ -79,21 +79,50 @@ export default function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1 animate-fade-in">
-          {[{ to:'/', label:'Home', end:true },{ to:'/subjects', label:'Subjects' }].map(({ to, label, end }) => (
-            <NavLink key={to} to={to} end={end} onClick={() => setOpen(false)} className={navCls}>
-              {label}
-            </NavLink>
-          ))}
+          {/* Nav links — prominent on mobile */}
+          <NavLink to="/" end onClick={() => setOpen(false)}
+            className={({ isActive }) => clsx(
+              'flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all',
+              isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
+            )}>
+            <Home size={18}/> Home
+          </NavLink>
+          <NavLink to="/subjects" onClick={() => setOpen(false)}
+            className={({ isActive }) => clsx(
+              'flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all',
+              isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
+            )}>
+            <BookOpen size={18}/> Subjects
+          </NavLink>
+
           {user ? (
-            <div className="pt-2 space-y-1 border-t border-gray-100">
-              {role === 'admin' && <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50"><Shield size={15}/> Admin Panel</Link>}
-              {role === 'student' && <Link to="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50"><LayoutDashboard size={15}/> Dashboard</Link>}
-              <button onClick={() => { handleSignOut(); setOpen(false) }} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50">
-                <LogOut size={15}/> Sign Out
+            <div className="pt-2 space-y-1 border-t border-gray-100 mt-2">
+              {role === 'admin' && (
+                <Link to="/admin" onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  <Shield size={18}/> Admin Panel
+                </Link>
+              )}
+              {role === 'student' && (
+                <Link to="/dashboard" onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  <LayoutDashboard size={18}/> Dashboard
+                </Link>
+              )}
+              {/* Mobile profile */}
+              <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                  <span className="text-white text-sm font-bold">{(profile?.full_name || 'U')[0].toUpperCase()}</span>
+                </div>
+                <span className="text-sm font-medium text-gray-800">{profile?.full_name || 'User'}</span>
+              </div>
+              <button onClick={() => { handleSignOut(); setOpen(false) }}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-red-600 hover:bg-red-50 transition-all">
+                <LogOut size={18}/> Sign Out
               </button>
             </div>
           ) : (
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-2 border-t border-gray-100 mt-2">
               <Link to="/login" onClick={() => setOpen(false)} className="btn-md btn-white flex-1 justify-center">Login</Link>
               <Link to="/register" onClick={() => setOpen(false)} className="btn-md btn-blue flex-1 justify-center">Register</Link>
             </div>
