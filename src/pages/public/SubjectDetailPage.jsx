@@ -568,23 +568,29 @@ export default function SubjectDetailPage() {
 
               {/* Unit header */}
               <div className="card p-4">
-                <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="min-w-0">
                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5 truncate">
                       {chapters.find(c=>c.units.some(u=>u.id===activeUnit))?.title}
                     </p>
                     <h2 className="font-bold text-lg sm:text-xl text-gray-900">{unitTitle}</h2>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                  <div className="flex items-center gap-2 flex-wrap justify-end mt-1 sm:mt-0">
                     {/* Language switcher */}
-                    {langs.length > 1 && langs.map(lang => (
-                      <button key={lang} onClick={() => setActiveLang(lang)}
-                        className={clsx('px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
-                          activeLang===lang ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
-                        {LANG_LABELS[lang]}
-                      </button>
-                    ))}
-                    {/* Mark done */}
+                    {langs.length > 1 && (
+                      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+                        {langs.map(lang => (
+                          <button key={lang} onClick={() => setActiveLang(lang)}
+                            className={clsx(
+                              'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                              activeLang===lang ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                            )}>
+                            {LANG_LABELS[lang]}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                      {/* Mark done */}
                     <button onClick={() => toggleDone(activeUnit)}
                       className={clsx('flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all',
                         completed.includes(activeUnit) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
