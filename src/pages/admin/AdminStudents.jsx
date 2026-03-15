@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { EmptyState, Badge } from '@/components/ui'
 import { Users, Search, Download } from 'lucide-react'
 import clsx from 'clsx'
@@ -13,26 +13,31 @@ export default function AdminStudents() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('newest') // newest | name | grade
 
-  useEffect(() => { fetchStudents() }, [grade])
+  useEffect(() => { fetchStudents() }, [])
 
   const fetchStudents = async () => {
     setLoading(true)
-    let q = supabaseAdmin
+    const { data } = await supabaseAdmin
       .from('student_profiles')
       .select('id, full_name, grade, school_name, district, medium, created_at')
       .order('created_at', { ascending: false })
-    if (grade !== 'all') q = q.eq('grade', parseInt(grade))
-    const { data } = await q.limit(500)
+      .limit(1000)
     setStudents(data || [])
     setLoading(false)
   }
 
   const filtered = students
-    .filter(s =>
-      s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      s.school_name?.toLowerCase().includes(search.toLowerCase()) ||
-      s.district?.toLowerCase().includes(search.toLowerCase())
-    )
+    .filter(s => grade === 'all' || s.grade === parseInt(grade))
+    .filter(s => {
+      if (!search.trim()) return true
+      const q = search.toLowerCase()
+      return (
+        s.full_name?.toLowerCase().includes(q) ||
+        s.school_name?.toLowerCase().includes(q) ||
+        s.district?.toLowerCase().includes(q) ||
+        s.medium?.toLowerCase().includes(q)
+      )
+    })
     .sort((a, b) => {
       if (sortBy === 'name') return (a.full_name||'').localeCompare(b.full_name||'')
       if (sortBy === 'grade') return a.grade - b.grade

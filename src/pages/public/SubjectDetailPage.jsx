@@ -380,7 +380,10 @@ export default function SubjectDetailPage() {
       ...c, units: (c.units||[]).filter(u=>u.is_active).sort((a,b)=>a.order_index-b.order_index)
     }))
     setChapters(chaps)
-    if (chaps[0]?.units[0]) { setExpanded({[chaps[0].id]:true}); setActiveUnit(chaps[0].units[0].id) }
+    // Expand all chapters by default, don't auto-select a unit
+    const allExpanded = {}
+    chaps.forEach(c => { allExpanded[c.id] = true })
+    setExpanded(allExpanded)
     setLoading(false)
   }
 
@@ -557,7 +560,37 @@ export default function SubjectDetailPage() {
         {/* Main content */}
         <div className="flex-1 min-w-0">
           {!activeUnit ? (
-            <EmptyState icon={BookOpen} title="Select a unit" desc="Tap 'All Units' above or choose from the sidebar."/>
+            <div className="space-y-4 animate-fade-in">
+              <div className="card p-5">
+                <h2 className="font-bold text-xl text-gray-900 mb-1">{subject?.name}</h2>
+                <p className="text-gray-500 text-sm">Grade {subject?.grade} · {chapters.length} chapters · {allUnits.length} units</p>
+              </div>
+              {chapters.map((ch, ci) => (
+                <div key={ch.id} className="card overflow-hidden">
+                  {/* Chapter heading */}
+                  <div className="flex items-center gap-3 px-5 py-4 bg-blue-50 border-b border-blue-100">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white font-bold text-sm flex items-center justify-center shrink-0">{ci+1}</div>
+                    <div>
+                      <p className="font-bold text-gray-900">{ch.title}</p>
+                      <p className="text-xs text-gray-500">{ch.units.length} units</p>
+                    </div>
+                  </div>
+                  {/* Units grid */}
+                  <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {ch.units.map((unit, ui) => (
+                      <button key={unit.id} onClick={() => goUnit(unit)}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all text-left group">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-blue-100 text-gray-500 group-hover:text-blue-700 font-bold text-sm flex items-center justify-center shrink-0 transition-colors">
+                          {ui+1}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800 group-hover:text-blue-700 flex-1 text-left leading-snug">{unit.title}</span>
+                        <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-500 shrink-0 transition-colors"/>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : contentLoading ? (
             <div className="space-y-3">{Array(4).fill(0).map((_,i)=><div key={i} className="skeleton h-20"/>)}</div>
           ) : (
@@ -568,29 +601,27 @@ export default function SubjectDetailPage() {
 
               {/* Unit header */}
               <div className="card p-4">
-                <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
                   <div className="min-w-0">
                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5 truncate">
                       {chapters.find(c=>c.units.some(u=>u.id===activeUnit))?.title}
                     </p>
                     <h2 className="font-bold text-lg sm:text-xl text-gray-900">{unitTitle}</h2>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap justify-end mt-1 sm:mt-0">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
                     {/* Language switcher */}
                     {langs.length > 1 && (
-                      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+                      <div className="flex gap-1 bg-gray-100 p-0.5 rounded-xl">
                         {langs.map(lang => (
                           <button key={lang} onClick={() => setActiveLang(lang)}
-                            className={clsx(
-                              'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
-                              activeLang===lang ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                            )}>
+                            className={clsx('px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                              activeLang===lang ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
                             {LANG_LABELS[lang]}
                           </button>
                         ))}
                       </div>
                     )}
-                      {/* Mark done */}
+                    {/* Mark done */}
                     <button onClick={() => toggleDone(activeUnit)}
                       className={clsx('flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all',
                         completed.includes(activeUnit) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
@@ -688,24 +719,27 @@ export default function SubjectDetailPage() {
                         </Link>
                       </div>
                   }
+                  {/* Next / Prev unit — only at bottom of quiz */}
+                  {allUnits.length > 1 && (
+                    <div className="flex gap-3 mt-6 pt-5 border-t border-gray-100">
+                      {unitIdx > 0 && (
+                        <button onClick={() => goUnit(allUnits[unitIdx-1])}
+                          className="btn-md btn-white gap-2 flex-1 justify-center min-w-0">
+                          <ChevronLeft size={15}/>
+                          <span className="truncate text-xs sm:text-sm">{allUnits[unitIdx-1].title}</span>
+                        </button>
+                      )}
+                      {unitIdx < allUnits.length-1 && (
+                        <button onClick={() => { toggleDone(activeUnit); goUnit(allUnits[unitIdx+1]) }}
+                          className="btn-md btn-blue gap-2 flex-1 justify-center min-w-0">
+                          <span className="truncate text-xs sm:text-sm">{allUnits[unitIdx+1].title}</span>
+                          <ChevronRight size={15}/>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
-
-              {/* Prev / Next unit */}
-              <div className="flex gap-3 pt-1 pb-4">
-                {unitIdx > 0 && (
-                  <button onClick={() => goUnit(allUnits[unitIdx-1])}
-                    className="btn-md btn-white gap-2 flex-1 justify-center min-w-0">
-                    <ChevronLeft size={15}/><span className="truncate">{allUnits[unitIdx-1].title}</span>
-                  </button>
-                )}
-                {unitIdx < allUnits.length-1 && (
-                  <button onClick={() => { toggleDone(activeUnit); goUnit(allUnits[unitIdx+1]) }}
-                    className="btn-md btn-blue gap-2 flex-1 justify-center min-w-0">
-                    <span className="truncate">{allUnits[unitIdx+1].title}</span><ChevronRight size={15}/>
-                  </button>
-                )}
-              </div>
 
             </div>
           )}
