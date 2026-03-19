@@ -300,19 +300,33 @@ function FlashcardDeck({ unitId, language, onComplete }) {
 }
 
 // ── Floating progress ──────────────────────────────────────────────────────
-function FloatingProgress({ tabs, currentTab, show, onClose }) {
+function FloatingProgress({ tabs, currentTab, pct, completedTabs, show, onClose }) {
   if (!show) return null
   const ti = tabs.findIndex(t => t.key === currentTab)
-  const pct = Math.round(((ti + 1) / tabs.length) * 100)
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-fade-up pointer-events-none">
-      <div className="bg-gray-900 text-white rounded-2xl px-5 py-3 shadow-2xl flex items-center gap-4 min-w-[240px] pointer-events-auto">
-        <div className="flex-1">
-          <div className="flex justify-between text-xs mb-1.5"><span className="text-gray-300">{tabs[ti]?.label}</span><span className="text-blue-400 font-bold">{pct}%</span></div>
-          <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: pct + '%' }} /></div>
-          <div className="flex gap-1 mt-2">{tabs.map((_, i) => <div key={i} className={clsx('rounded-full transition-all', i < ti ? 'h-1.5 w-4 bg-blue-400' : i === ti ? 'h-1.5 w-6 bg-blue-500' : 'h-1.5 w-1.5 bg-gray-600')} />)}</div>
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-4 w-full max-w-xs">
+      <div className="bg-gray-900 text-white rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 pointer-events-auto">
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between text-xs mb-1.5">
+            <span className="text-gray-300 truncate">{tabs[ti]?.label}</span>
+            <span className="text-blue-400 font-bold shrink-0 ml-2">{pct}%</span>
+          </div>
+          <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: pct + '%' }} />
+          </div>
+          <div className="flex gap-1.5 mt-2 items-center">
+            {tabs.map((t, i) => {
+              const done = completedTabs.includes(t.key)
+              const active = i === ti
+              return (
+                <div key={t.key} className={clsx('rounded-full transition-all duration-300',
+                  done ? 'h-2 w-5 bg-green-400' :
+                  active ? 'h-2 w-6 bg-blue-500' : 'h-2 w-2 bg-gray-600')} />
+              )
+            })}
+          </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 shrink-0"><X size={14} /></button>
+        <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 shrink-0 ml-1"><X size={13} /></button>
       </div>
     </div>
   )
@@ -336,6 +350,7 @@ export default function SubjectDetailPage() {
   const [contentLoading, setContentLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showProgress, setShowProgress] = useState(false)
+  const [tabsCompleted, setTabsCompleted] = useState([]) // tracks which tabs done for current unit
   const [completed, setCompleted] = useState(() => {
     try { return JSON.parse(localStorage.getItem('q_done_' + subjectId) || '[]') } catch { return [] }
   })
@@ -397,6 +412,7 @@ export default function SubjectDetailPage() {
     setQuiz(qRes.data || null)
     const hasVideo = cRes.data?.some(c => c.video_url?.trim())
     setTab(hasVideo ? 'video' : 'notes')
+    setTabsCompleted([]) // reset tab progress when switching units
     setContentLoading(false)
     contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -441,8 +457,18 @@ export default function SubjectDetailPage() {
 
   const tabIdx2 = TABS.findIndex(t => t.key === tab)
   const nextTab = TABS[tabIdx2 + 1]
+
+  // Progress = how many tabs completed out of total
+  // 0% at start, increments as each tab finishes
+  const tabProgressPct = TABS.length > 0
+    ? Math.round((tabsCompleted.length / TABS.length) * 100)
+    : 0
+  const markTabDone = (tabKey) => {
+    setTabsCompleted(prev => prev.includes(tabKey) ? prev : [...prev, tabKey])
+  }
   const goNextTab = () => {
     if (nextTab && !nextTab.disabled) {
+      markTabDone(tab) // mark current tab complete
       setTab(nextTab.key)
       contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
@@ -528,11 +554,11 @@ export default function SubjectDetailPage() {
       {/* Mobile: current unit bar */}
       <div className="lg:hidden flex items-center justify-between mb-3 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
         <div className="min-w-0 flex-1 mr-3">
-          <p className="text-xs text-gray-400">{chapterTitle}</p>
+          <p className="text-xs text-gray-400">{chapterTitle || 'Tap to browse chapters'}</p>
           <p className="text-sm font-semibold text-gray-900 truncate">{unitTitle || 'Select a unit'}</p>
         </div>
         <button onClick={() => setSidebarOpen(true)} className="btn-sm btn-white gap-2 shrink-0">
-          <BookOpen size={14} /> Units
+          <BookOpen size={14} /> Chapters
         </button>
       </div>
 
@@ -542,7 +568,7 @@ export default function SubjectDetailPage() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
           <div className="relative w-80 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white shrink-0">
-              <span className="font-bold text-gray-900">Units</span>
+              <span className="font-bold text-gray-900">Chapters & Units</span>
               <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"><X size={18} /></button>
             </div>
             <div className="flex-1 overflow-hidden"><SidebarContent /></div>
@@ -560,31 +586,39 @@ export default function SubjectDetailPage() {
         {/* Content */}
         <div className="flex-1 min-w-0" ref={contentRef}>
           {!activeUnit ? (
-            /* Chapter/unit overview */
-            <div className="space-y-4 animate-fade-in">
-              <div className="card p-5">
+            /* Chapter/unit overview — chapters collapsed by default */
+            <div className="space-y-3 animate-fade-in">
+              <div className="card p-4 sm:p-5">
                 <h2 className="font-bold text-xl text-gray-900 mb-1">{subjectName}</h2>
                 <p className="text-gray-500 text-sm">Grade {subject?.grade} · {chapters.length} chapters · {allUnits.length} units</p>
+                <p className="text-xs text-gray-400 mt-1">Tap a chapter to expand and choose a unit</p>
               </div>
               {chapters.map((ch, ci) => (
                 <div key={ch.id} className="card overflow-hidden">
-                  <div className="flex items-center gap-3 px-5 py-4 bg-blue-50 border-b border-blue-100">
+                  {/* Chapter header — clickable to collapse/expand */}
+                  <button
+                    onClick={() => setExpanded(p => ({ ...p, [ch.id]: !p[ch.id] }))}
+                    className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors">
                     <div className="w-8 h-8 rounded-xl bg-blue-600 text-white font-bold text-sm flex items-center justify-center shrink-0">{ci + 1}</div>
-                    <div>
-                      <p className="font-bold text-gray-900">{getChapterTitle(ch)}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 truncate">{getChapterTitle(ch)}</p>
                       <p className="text-xs text-gray-500">{ch.units.length} units</p>
                     </div>
-                  </div>
-                  <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {ch.units.map((unit, ui) => (
-                      <button key={unit.id} onClick={() => goUnit(unit)}
-                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all text-left group">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-blue-100 text-gray-500 group-hover:text-blue-700 font-bold text-sm flex items-center justify-center shrink-0 transition-colors">{ui + 1}</div>
-                        <span className="text-sm font-medium text-gray-800 group-hover:text-blue-700 flex-1 leading-snug">{getUnitTitle(unit)}</span>
-                        <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-500 shrink-0 transition-colors" />
-                      </button>
-                    ))}
-                  </div>
+                    <ChevronDown size={16} className={clsx('text-gray-400 transition-transform shrink-0', expanded[ch.id] && 'rotate-180')} />
+                  </button>
+                  {/* Units grid — only shown when expanded */}
+                  {expanded[ch.id] && (
+                    <div className="border-t border-gray-100 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {ch.units.map((unit, ui) => (
+                        <button key={unit.id} onClick={() => goUnit(unit)}
+                          className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all text-left group">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-blue-100 text-gray-500 group-hover:text-blue-700 font-bold text-sm flex items-center justify-center shrink-0 transition-colors">{ui + 1}</div>
+                          <span className="text-sm font-medium text-gray-800 group-hover:text-blue-700 flex-1 leading-snug">{getUnitTitle(unit)}</span>
+                          <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-500 shrink-0 transition-colors" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -616,12 +650,28 @@ export default function SubjectDetailPage() {
                         t.disabled && 'opacity-40 cursor-not-allowed'
                       )}>
                       <div className={clsx('w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
-                        tab === t.key ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600')}>{ti + 1}</div>
+                        tabsCompleted.includes(t.key) ? 'bg-green-500 text-white' :
+                        tab === t.key ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600')}>
+                        {tabsCompleted.includes(t.key) ? '✓' : ti + 1}
+                      </div>
                       <t.icon size={13} className="shrink-0" />
                       <span className="hidden sm:inline truncate">{t.label}</span>
                       {t.badge > 0 && <span className="bdg-blue text-xs hidden sm:inline">{t.badge}</span>}
                     </button>
                   ))}
+                </div>
+
+                {/* Progress bar — starts 0%, fills as each tab completes */}
+                <div className="mt-2.5">
+                  <div className="flex justify-between items-center text-xs mb-1">
+                    <span className="text-gray-400">{tabsCompleted.length}/{TABS.length} completed</span>
+                    <span className={clsx('font-bold', tabProgressPct === 100 ? 'text-green-600' : 'text-blue-600')}>{tabProgressPct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className={clsx('h-full rounded-full transition-all duration-700',
+                      tabProgressPct === 100 ? 'bg-green-500' : 'bg-blue-500')}
+                      style={{ width: tabProgressPct + '%' }} />
+                  </div>
                 </div>
               </div>
 
@@ -630,7 +680,9 @@ export default function SubjectDetailPage() {
                 <div className="space-y-3 animate-fade-in">
                   <div className="card p-1 overflow-hidden"><VideoPlayer url={cur.video_url} /></div>
                   <div className="flex justify-end">
-                    <button onClick={goNextTab} className="btn-md btn-blue gap-2">Next: Notes <ChevronRight size={15} /></button>
+                    <button onClick={() => { markTabDone('video'); goNextTab() }} className="btn-md btn-blue gap-2">
+                      <CheckCircle2 size={15}/> Done — Next: Notes <ChevronRight size={15} />
+                    </button>
                   </div>
                 </div>
               )}
@@ -638,14 +690,22 @@ export default function SubjectDetailPage() {
               {/* Notes */}
               {tab === 'notes' && (
                 <div className="card p-4 sm:p-5 animate-fade-in">
-                  <NotesViewer content={cur?.note_content || ''} onComplete={() => { if (nextTab && !nextTab.disabled) setTab(nextTab.key) }} />
+                  <NotesViewer content={cur?.note_content || ''} onComplete={() => {
+                    markTabDone('notes')
+                    if (nextTab && !nextTab.disabled) setTab(nextTab.key)
+                    contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }} />
                 </div>
               )}
 
               {/* Flashcards */}
               {tab === 'flashcards' && (
                 <div className="card p-4 sm:p-6 animate-fade-in">
-                  <FlashcardDeck unitId={activeUnit} language={language} onComplete={() => { if (nextTab && !nextTab.disabled) setTab(nextTab.key) }} />
+                  <FlashcardDeck unitId={activeUnit} language={language} onComplete={() => {
+                    markTabDone('flashcards')
+                    if (nextTab && !nextTab.disabled) setTab(nextTab.key)
+                    contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }} />
                 </div>
               )}
 
@@ -663,7 +723,7 @@ export default function SubjectDetailPage() {
                     ))}
                   </div>
                   {user
-                    ? <Link to={`/quiz/${quiz.id}`} className="btn-lg btn-blue w-full justify-center gap-2">Start Quiz <ChevronRight size={18} /></Link>
+                    ? <Link to={`/quiz/${quiz.id}`} onClick={() => markTabDone('quiz')} className="btn-lg btn-blue w-full justify-center gap-2">Start Quiz <ChevronRight size={18} /></Link>
                     : <div className="text-center space-y-3">
                       <p className="text-sm text-gray-500">Login to save your score</p>
                       <Link to="/login" className="btn-lg btn-blue gap-2 inline-flex"><Lock size={16} /> Login</Link>
@@ -690,7 +750,7 @@ export default function SubjectDetailPage() {
         </div>
       </div>
 
-      <FloatingProgress tabs={TABS} currentTab={tab} show={showProgress && !!activeUnit} onClose={() => setShowProgress(false)} />
+      <FloatingProgress tabs={TABS} currentTab={tab} pct={tabProgressPct} completedTabs={tabsCompleted} show={showProgress && !!activeUnit} onClose={() => setShowProgress(false)} />
     </div>
   )
 }
