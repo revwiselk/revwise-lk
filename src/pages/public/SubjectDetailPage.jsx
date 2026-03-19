@@ -378,7 +378,8 @@ export default function SubjectDetailPage() {
         .sort((a, b) => a.order_index - b.order_index)
     }))
     setChapters(chaps)
-    const allExp = {}; chaps.forEach(c => { allExp[c.id] = true }); setExpanded(allExp)
+    // Chapters start collapsed — user opens them manually
+    setExpanded({})
     setLoading(false)
   }
 
@@ -426,7 +427,7 @@ export default function SubjectDetailPage() {
   const activeChapterTitle = chapters.find(c => c.units.some(u => u.id === activeUnit))
   const chapterTitle = activeChapterTitle ? getChapterTitle(activeChapterTitle) : ''
 
-  const donePct = allUnits.length
+  const donePct = allUnits.length > 0
     ? Math.round((completed.filter(id => allUnits.some(u => u.id === id)).length / allUnits.length) * 100) : 0
 
   const TABS = [

@@ -68,7 +68,7 @@ export default function AdminSubjects() {
     toast.success('Deleted'); setDeleteConfirm(null); fetchSubjects()
   }
 
-  const filtered = filterGrade === 'all' ? subjects : subjects.filter(s => s.grade === parseInt(filterGrade))
+  const filtered = filterGrade === 'all' ? subjects : subjects.filter(s => Number(s.grade) === Number(filterGrade))
 
   return (
     <div>
@@ -113,7 +113,7 @@ export default function AdminSubjects() {
                     <td className="px-4 py-3"><Badge color="blue">Grade {s.grade}</Badge></td>
                     <td className="px-4 py-3"><code className="text-xs bg-gray-100 px-2 py-0.5 rounded">{s.slug}</code></td>
                     <td className="px-4 py-3 text-sm text-gray-600">{s.chapters?.length || 0}</td>
-                    <td className="px-4 py-3"><Badge variant={s.is_active ? 'green' : 'gray'}>{s.is_active ? 'Active' : 'Hidden'}</Badge></td>
+                    <td className="px-4 py-3"><Badge color={s.is_active ? 'green' : 'gray'}>{s.is_active ? 'Active' : 'Hidden'}</Badge></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <button onClick={() => navigate(`/admin/subjects/${s.id}/chapters`)}
