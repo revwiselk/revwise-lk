@@ -20,9 +20,9 @@ export default function AdminSubjects() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [form, setForm] = useState({ slug:'science', grade:6, name:'', description:'', color_hex:'#2563eb', is_active:true, order_index:0 })
 
-  useEffect(() => { fetch() }, [])
+  useEffect(() => { fetchSubjects() }, [])
 
-  const fetch = async () => {
+  const fetchSubjects = async () => {
     setLoading(true)
     const { data } = await supabaseAdmin.from('subjects')
       .select('id, slug, grade, name, description, color_hex, order_index, is_active, created_at, chapters(id)')
@@ -59,13 +59,13 @@ export default function AdminSubjects() {
       if (error) { toast.error(error.message); setSaving(false); return }
       toast.success('Subject created')
     }
-    setSaving(false); setModalOpen(false); fetch()
+    setSaving(false); setModalOpen(false); fetchSubjects()
   }
 
   const handleDelete = async (id) => {
     const { error } = await supabaseAdmin.from('subjects').delete().eq('id', id)
     if (error) { toast.error(error.message); return }
-    toast.success('Deleted'); setDeleteConfirm(null); fetch()
+    toast.success('Deleted'); setDeleteConfirm(null); fetchSubjects()
   }
 
   const filtered = filterGrade === 'all' ? subjects : subjects.filter(s => s.grade === parseInt(filterGrade))
@@ -87,9 +87,9 @@ export default function AdminSubjects() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">{Array(6).fill(0).map((_,i) => <div key={i} className="p-4 h-16 skeleton"/>)}</div>
+        <div className="space-y-3">{Array(6).fill(0).map((_,i) => <div key={i} className="skeleton h-16"/>)}</div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={BookOpen} title="No subjects" description="Add your first subject."/>
+        <EmptyState icon={BookOpen} title="No subjects" desc="Add your first subject."/>
       ) : (
         <div className="card">
           <div className="overflow-x-auto">
