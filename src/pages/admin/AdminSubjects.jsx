@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { Btn, Field, Sel, Txt, Modal, Badge, PageHead, EmptyState } from '@/components/ui'
 import { Plus, Edit2, Trash2, ChevronRight, BookOpen } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -80,14 +80,14 @@ export default function AdminSubjects() {
         {['all', ...GRADES.map(String)].map(g => (
           <button key={g} onClick={() => setFilterGrade(g)}
             className={clsx('px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
-              filterGrade === g ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 card-lift:border-blue-300')}>
+              filterGrade === g ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300 hover:text-blue-600')}>
             {g === 'all' ? 'All' : `Grade ${g}`}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="space-y-3">{Array(6).fill(0).map((_,i) => <div key={i} className="p-4 h-16 skeleton" />)}</div>
+        <div className="space-y-3">{Array(6).fill(0).map((_,i) => <div key={i} className="p-4 h-16 skeleton"/>)}</div>
       ) : filtered.length === 0 ? (
         <EmptyState icon={BookOpen} title="No subjects" description="Add your first subject."/>
       ) : (
@@ -103,7 +103,7 @@ export default function AdminSubjects() {
               </thead>
               <tbody>
                 {filtered.map(s => (
-                  <tr key={s.id} className="border-b border-gray-50 last:border-0 card-lift:bg-gray-50">
+                  <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{ background: s.color_hex }}/>
@@ -117,11 +117,11 @@ export default function AdminSubjects() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <button onClick={() => navigate(`/admin/subjects/${s.id}/chapters`)}
-                          className="p-1.5 rounded-lg text-gray-400 card-lift:text-blue-600 card-lift:bg-blue-50 transition-all" title="Chapters">
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Chapters">
                           <ChevronRight size={15}/>
                         </button>
-                        <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg text-gray-400 card-lift:text-gray-700 card-lift:bg-gray-100 transition-all"><Edit2 size={15}/></button>
-                        <button onClick={() => setDeleteConfirm(s)} className="p-1.5 rounded-lg text-gray-400 card-lift:text-red-600 card-lift:bg-red-50 transition-all"><Trash2 size={15}/></button>
+                        <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"><Edit2 size={15}/></button>
+                        <button onClick={() => setDeleteConfirm(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"><Trash2 size={15}/></button>
                       </div>
                     </td>
                   </tr>

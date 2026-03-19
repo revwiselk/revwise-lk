@@ -20,7 +20,7 @@ export default function QuizPage() {
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null) // shown after submit
   const [phase, setPhase] = useState('quiz') // 'quiz' | 'result' | 'feedback'
-  const [feedback, setFeedback] = useState({ rating: 0, body: '', name: '' })
+  const [feedback, setFeedback] = useState({ rating: 0, body: '', name: '', category: '' })
   const [feedbackSent, setFeedbackSent] = useState(false)
   const startedAt = useRef(new Date())
   const timerRef = useRef(null)
@@ -104,7 +104,8 @@ export default function QuizPage() {
       unit_id: null,
       name: feedback.name.trim() || null,
       body: feedback.body.trim(),
-      feedback_type: 'quiz',
+      feedback_type: feedback.category || 'quiz',
+      rating: feedback.rating || null,
     })
     setFeedbackSent(true)
   }

@@ -5,42 +5,22 @@ import { Btn, Sel, Modal, Badge, PageHead, EmptyState, Field } from '@/component
 import {
   Plus, Edit2, Trash2, ChevronRight, ArrowLeft,
   Bold, Italic, Heading2, Heading3, List, Quote, Code,
-  Eye, EyeOff, GripVertical, X, Save, Video, FileText, Zap
+  Eye, EyeOff, X, Save, Video, FileText, Zap, Upload, Download, CheckCircle2
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-const LANGS = ['english', 'sinhala', 'tamil']
-const LANG_LABELS = { english: 'English', sinhala: 'සිංහල', tamil: 'தமிழ்' }
+const LANGS = ['english','sinhala','tamil']
+const LANG_LABELS = { english:'English', sinhala:'සිංහල', tamil:'தமிழ்' }
 
-function MarkdownEditor({ value, onChange, placeholder, minH = 220 }) {
+function MarkdownEditor({ value, onChange, placeholder, minH=200 }) {
   const [preview, setPreview] = useState(false)
   const ref = useRef(null)
-  const wrap = (b, a='', ph='text') => {
-    const el=ref.current; if(!el) return
-    const s=el.selectionStart,e=el.selectionEnd
-    const sel=value.slice(s,e)||ph
-    onChange(value.slice(0,s)+b+sel+a+value.slice(e))
-    setTimeout(()=>{el.focus();el.setSelectionRange(s+b.length,s+b.length+sel.length)},0)
-  }
-  const line = (prefix) => {
-    const el=ref.current; if(!el) return
-    const s=el.selectionStart
-    const ls=value.lastIndexOf('\n',s-1)+1
-    onChange(value.slice(0,ls)+prefix+value.slice(ls))
-    setTimeout(()=>el.focus(),0)
-  }
-  const tools = [
-    {icon:Heading2,title:'Topic (## )',fn:()=>line('## ')},
-    {icon:Heading3,title:'Sub heading (### )',fn:()=>line('### ')},
-    {icon:Bold,title:'Bold',fn:()=>wrap('**','**','bold')},
-    {icon:Italic,title:'Italic',fn:()=>wrap('*','*','italic')},
-    {icon:Code,title:'Code',fn:()=>wrap('`','`','code')},
-    {icon:List,title:'List',fn:()=>line('- ')},
-    {icon:Quote,title:'Callout',fn:()=>line('> ')},
-  ]
+  const wrap=(b,a='',ph='text')=>{const el=ref.current;if(!el)return;const s=el.selectionStart,e=el.selectionEnd;const sel=value.slice(s,e)||ph;onChange(value.slice(0,s)+b+sel+a+value.slice(e));setTimeout(()=>{el.focus();el.setSelectionRange(s+b.length,s+b.length+sel.length)},0)}
+  const line=(prefix)=>{const el=ref.current;if(!el)return;const s=el.selectionStart;const ls=value.lastIndexOf('\n',s-1)+1;onChange(value.slice(0,ls)+prefix+value.slice(ls));setTimeout(()=>el.focus(),0)}
+  const tools=[{icon:Heading2,title:'## Topic',fn:()=>line('## ')},{icon:Heading3,title:'### Sub',fn:()=>line('### ')},{icon:Bold,title:'Bold',fn:()=>wrap('**','**','bold')},{icon:Italic,title:'Italic',fn:()=>wrap('*','*','italic')},{icon:Code,title:'Code',fn:()=>wrap('`','`','code')},{icon:List,title:'List',fn:()=>line('- ')},{icon:Quote,title:'Callout',fn:()=>line('> ')}]
   return (
     <div className="border border-gray-200 rounded-xl overflow-hidden">
       <div className="flex items-center gap-0.5 px-2 py-1.5 bg-gray-50 border-b border-gray-200 flex-wrap">
@@ -63,8 +43,7 @@ function MarkdownEditor({ value, onChange, placeholder, minH = 220 }) {
             :<p className="text-gray-400 italic text-sm">Nothing to preview yet...</p>}
         </div>
       ):(
-        <textarea ref={ref} value={value} onChange={e=>onChange(e.target.value)}
-          placeholder={placeholder}
+        <textarea ref={ref} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
           className="w-full px-4 py-3 font-mono text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-inset resize-y"
           style={{minHeight:minH}}/>
       )}
@@ -74,27 +53,40 @@ function MarkdownEditor({ value, onChange, placeholder, minH = 220 }) {
 
 function FlashcardRow({ card, onChange, onDelete, index }) {
   return (
-    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
-      <div className="text-gray-300 mt-2 shrink-0"><GripVertical size={16}/></div>
-      <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0 mt-1.5">{index+1}</div>
+    <div className="flex items-start gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+      <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0 mt-1">{index+1}</div>
       <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div>
-          <label className="text-xs font-medium text-gray-500 mb-1 block">Term / Concept</label>
+          <label className="text-xs font-medium text-gray-500 mb-1 block">Term</label>
           <input value={card.term} onChange={e=>onChange({...card,term:e.target.value})}
             placeholder="e.g. Photosynthesis" className="inp text-sm py-2"/>
         </div>
         <div>
           <label className="text-xs font-medium text-gray-500 mb-1 block">Definition</label>
           <input value={card.definition} onChange={e=>onChange({...card,definition:e.target.value})}
-            placeholder="e.g. Process plants use to make food..." className="inp text-sm py-2"/>
+            placeholder="e.g. Process plants use..." className="inp text-sm py-2"/>
         </div>
         <div className="sm:col-span-2">
           <label className="text-xs font-medium text-gray-500 mb-1 block">Hint (optional)</label>
           <input value={card.hint||''} onChange={e=>onChange({...card,hint:e.target.value})}
-            placeholder="Memory aid or extra context..." className="inp text-sm py-2"/>
+            placeholder="Memory aid..." className="inp text-sm py-2"/>
         </div>
       </div>
-      <button onClick={onDelete} className="mt-1.5 p-1.5 text-gray-300 hover:text-red-500 transition-colors shrink-0"><X size={15}/></button>
+      <button onClick={onDelete} className="mt-1 p-1.5 text-gray-300 hover:text-red-500 transition-colors shrink-0"><X size={14}/></button>
+    </div>
+  )
+}
+
+// Completion dot indicator
+function LangDots({ content, flashcards }) {
+  return (
+    <div className="flex gap-1.5 mt-1">
+      {LANGS.map(lang=>{
+        const hasContent = content[lang]?.note_content?.trim() || content[lang]?.video_url?.trim()
+        const hasCards = (flashcards[lang]||[]).some(c=>c.term.trim())
+        const done = hasContent || hasCards
+        return <div key={lang} title={LANG_LABELS[lang]} className={clsx('w-2 h-2 rounded-full',done?'bg-green-500':'bg-gray-300')}/>
+      })}
     </div>
   )
 }
@@ -112,14 +104,12 @@ export default function AdminUnits() {
   const [activeLang, setActiveLang] = useState('english')
   const [activeSection, setActiveSection] = useState('notes')
   const [form, setForm] = useState({
-    order_index:1, title:'', is_active:true,
-    content:{
-      english:{note_content:'',video_url:'',status:'published'},
-      sinhala:{note_content:'',video_url:'',status:'draft'},
-      tamil:  {note_content:'',video_url:'',status:'draft'},
-    },
-    flashcards:{english:[],sinhala:[],tamil:[]},
+    order_index:1, is_active:true,
+    titles:{ english:'', sinhala:'', tamil:'' },
+    content:{ english:{note_content:'',video_url:'',status:'published'}, sinhala:{note_content:'',video_url:'',status:'draft'}, tamil:{note_content:'',video_url:'',status:'draft'} },
+    flashcards:{ english:[], sinhala:[], tamil:[] },
   })
+  const fcFileRef = useRef(null)
 
   useEffect(()=>{fetchData()},[chapterId])
 
@@ -136,44 +126,43 @@ export default function AdminUnits() {
     setLoading(false)
   }
 
+  const blankForm = (n=0) => ({
+    order_index:n, is_active:true,
+    titles:{english:'',sinhala:'',tamil:''},
+    content:{english:{note_content:'',video_url:'',status:'published'},sinhala:{note_content:'',video_url:'',status:'draft'},tamil:{note_content:'',video_url:'',status:'draft'}},
+    flashcards:{english:[],sinhala:[],tamil:[]},
+  })
+
   const openCreate = () => {
     setEditing(null); setActiveLang('english'); setActiveSection('notes')
-    setForm({
-      order_index:units.length+1, title:'', is_active:true,
-      content:{english:{note_content:'',video_url:'',status:'published'},sinhala:{note_content:'',video_url:'',status:'draft'},tamil:{note_content:'',video_url:'',status:'draft'}},
-      flashcards:{english:[],sinhala:[],tamil:[]},
-    })
-    setModalOpen(true)
+    setForm(blankForm(units.length+1)); setModalOpen(true)
   }
 
   const openEdit = async (u) => {
     setEditing(u); setActiveLang('english'); setActiveSection('notes')
-    const content={
-      english:{note_content:'',video_url:'',status:'published'},
-      sinhala:{note_content:'',video_url:'',status:'draft'},
-      tamil:  {note_content:'',video_url:'',status:'draft'},
-    }
+    const titles={english:u.title||'',sinhala:'',tamil:''}
+    const content={english:{note_content:'',video_url:'',status:'published'},sinhala:{note_content:'',video_url:'',status:'draft'},tamil:{note_content:'',video_url:'',status:'draft'}}
     ;(u.unit_content||[]).forEach(c=>{content[c.language]={note_content:c.note_content||'',video_url:c.video_url||'',status:c.status||'draft'}})
-    const {data:fcData} = await supabaseAdmin.from('flashcards').select('*').eq('unit_id',u.id).order('order_index')
+    const {data:fcData}=await supabaseAdmin.from('flashcards').select('*').eq('unit_id',u.id).order('order_index')
     const flashcards={english:[],sinhala:[],tamil:[]}
     ;(fcData||[]).forEach(fc=>{if(flashcards[fc.language]) flashcards[fc.language].push({id:fc.id,term:fc.term,definition:fc.definition,hint:fc.hint||''})})
-    setForm({order_index:u.order_index,title:u.title,is_active:u.is_active,content,flashcards})
+    setForm({order_index:u.order_index,is_active:u.is_active,titles,content,flashcards})
     setModalOpen(true)
   }
 
   const handleSave = async () => {
-    if(!form.title.trim()){toast.error('Title is required');return}
+    if(!form.titles.english.trim()){toast.error('English title is required');return}
     setSaving(true)
     try {
-      let unitId = editing?.id
+      let unitId=editing?.id
       if(editing){
-        await supabaseAdmin.from('units').update({order_index:parseInt(form.order_index),title:form.title.trim(),is_active:form.is_active}).eq('id',editing.id)
+        await supabaseAdmin.from('units').update({order_index:parseInt(form.order_index),title:form.titles.english.trim(),is_active:form.is_active}).eq('id',editing.id)
       } else {
-        const {data:newUnit,error} = await supabaseAdmin.from('units')
-          .insert({chapter_id:chapterId,order_index:parseInt(form.order_index),title:form.title.trim(),is_active:form.is_active})
+        const {data:newUnit,error}=await supabaseAdmin.from('units')
+          .insert({chapter_id:chapterId,order_index:parseInt(form.order_index),title:form.titles.english.trim(),is_active:form.is_active})
           .select().single()
         if(error) throw error
-        unitId = newUnit.id
+        unitId=newUnit.id
         await supabaseAdmin.from('quizzes').insert({unit_id:unitId,quiz_type:'practice',pass_mark_percent:50,is_active:true})
       }
       for(const lang of LANGS){
@@ -194,23 +183,66 @@ export default function AdminUnits() {
       if(allCards.length) await supabaseAdmin.from('flashcards').insert(allCards)
       toast.success(editing?'Unit updated!':'Unit created!')
       setModalOpen(false); fetchData()
-    } catch(err){ toast.error(err.message) }
+    } catch(err){toast.error(err.message)}
     setSaving(false)
   }
 
-  const handleDelete = async (id) => {
-    const {error} = await supabaseAdmin.from('units').delete().eq('id',id)
-    if(error){toast.error(error.message);return}
-    toast.success('Deleted'); setDeleteConfirm(null); fetchData()
+  const setContent=(lang,key,val)=>setForm(f=>({...f,content:{...f.content,[lang]:{...f.content[lang],[key]:val}}}))
+  const addFC=(lang)=>setForm(f=>({...f,flashcards:{...f.flashcards,[lang]:[...(f.flashcards[lang]||[]),{term:'',definition:'',hint:''}]}}))
+  const updateFC=(lang,idx,card)=>setForm(f=>({...f,flashcards:{...f.flashcards,[lang]:f.flashcards[lang].map((c,i)=>i===idx?card:c)}}))
+  const deleteFC=(lang,idx)=>setForm(f=>({...f,flashcards:{...f.flashcards,[lang]:f.flashcards[lang].filter((_,i)=>i!==idx)}}))
+
+  // Excel upload for flashcards
+  const handleFCExcel = async (e) => {
+    const file = e.target.files?.[0]; if(!file) return
+    try {
+      const ExcelJS = (await import('exceljs')).default
+      const wb = new ExcelJS.Workbook()
+      await wb.xlsx.load(await file.arrayBuffer())
+      const ws = wb.worksheets[0]
+      const headerRow = ws.getRow(1).values
+      const headers = Array.isArray(headerRow) ? headerRow.slice(1) : []
+      const newCards = {english:[],sinhala:[],tamil:[]}
+      ws.eachRow((row,rowNum)=>{
+        if(rowNum===1) return
+        const obj={}
+        row.values.forEach((val,ci)=>{ if(ci>0&&headers[ci-1]) obj[headers[ci-1]]=val===null||val===undefined?'':String(val) })
+        const term_en=obj.term_en||obj.term||''
+        const def_en=obj.definition_en||obj.definition||''
+        if(term_en.trim()&&def_en.trim()){
+          newCards.english.push({term:term_en.trim(),definition:def_en.trim(),hint:obj.hint_en||''})
+          if(obj.term_si) newCards.sinhala.push({term:obj.term_si,definition:obj.definition_si||def_en,hint:obj.hint_si||''})
+          if(obj.term_ta) newCards.tamil.push({term:obj.term_ta,definition:obj.definition_ta||def_en,hint:obj.hint_ta||''})
+        }
+      })
+      setForm(f=>({...f,flashcards:{...f.flashcards,...Object.fromEntries(LANGS.map(l=>[l,[...(f.flashcards[l]||[]),...(newCards[l]||[])]])) }}))
+      const total = Object.values(newCards).reduce((s,a)=>s+a.length,0)
+      toast.success(`Imported ${total} flashcards from Excel`)
+    } catch(err){ toast.error('Excel error: '+err.message) }
+    e.target.value=''
   }
 
-  const setContent=(lang,key,val)=>setForm(f=>({...f,content:{...f.content,[lang]:{...f.content[lang],[key]:val}}}))
-  const addFlashcard=(lang)=>setForm(f=>({...f,flashcards:{...f.flashcards,[lang]:[...(f.flashcards[lang]||[]),{term:'',definition:'',hint:''}]}}))
-  const updateFlashcard=(lang,idx,card)=>setForm(f=>({...f,flashcards:{...f.flashcards,[lang]:f.flashcards[lang].map((c,i)=>i===idx?card:c)}}))
-  const deleteFlashcard=(lang,idx)=>setForm(f=>({...f,flashcards:{...f.flashcards,[lang]:f.flashcards[lang].filter((_,i)=>i!==idx)}}))
+  const downloadFCTemplate = async () => {
+    const ExcelJS = (await import('exceljs')).default
+    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('Flashcards')
+    ws.columns = [
+      {header:'term_en',key:'term_en',width:25},{header:'definition_en',key:'definition_en',width:40},{header:'hint_en',key:'hint_en',width:25},
+      {header:'term_si',key:'term_si',width:25},{header:'definition_si',key:'definition_si',width:40},{header:'hint_si',key:'hint_si',width:25},
+      {header:'term_ta',key:'term_ta',width:25},{header:'definition_ta',key:'definition_ta',width:40},{header:'hint_ta',key:'hint_ta',width:25},
+    ]
+    ws.getRow(1).eachCell(cell=>{ cell.font={bold:true,color:{argb:'FFFFFFFF'}}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2563EB'}} })
+    ws.addRow({term_en:'Photosynthesis',definition_en:'Process plants use to make food',hint_en:'Photo=light',term_si:'ප්‍රකාශ සංශ්ලේෂණය',definition_si:'ශාක ආහාර සාදාගන්නා ක්‍රියාවලිය',hint_si:'',term_ta:'ஒளிச்சேர்க்கை',definition_ta:'தாவரங்கள் உணவு தயாரிக்கும் செயல்முறை',hint_ta:''})
+    const buf=await wb.xlsx.writeBuffer()
+    const url=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}))
+    const a=document.createElement('a'); a.href=url; a.download='flashcard_template.xlsx'; a.click(); URL.revokeObjectURL(url)
+  }
 
   const cur=form.content[activeLang]
   const curCards=form.flashcards[activeLang]||[]
+
+  // Content completion check
+  const contentDone = LANGS.filter(l=>form.content[l].note_content?.trim()||form.content[l].video_url?.trim()).length
+  const cardsDone = LANGS.filter(l=>(form.flashcards[l]||[]).some(c=>c.term.trim())).length
 
   return (
     <div>
@@ -229,7 +261,7 @@ export default function AdminUnits() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                {['#','Title','Video','Notes','Flashcards','Quiz','Status','Actions'].map(h=>(
+                {['#','Title','Video','Notes','Cards','Quiz','Status','Actions'].map(h=>(
                   <th key={h} className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-4 py-3">{h}</th>
                 ))}
               </tr>
@@ -240,17 +272,17 @@ export default function AdminUnits() {
                 const hasNotes=u.unit_content?.some(c=>c.note_content?.trim()&&c.status==='published')
                 const hasQuiz=u.quizzes&&(Array.isArray(u.quizzes)?u.quizzes.some(q=>q.is_active):u.quizzes?.is_active)
                 return(
-                  <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                  <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-3"><div className="w-7 h-7 rounded-lg bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center">{u.order_index}</div></td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{u.title}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[180px] truncate">{u.title}</td>
                     <td className="px-4 py-3"><Badge color={hasVideo?'blue':'gray'}>{hasVideo?'✓':'–'}</Badge></td>
                     <td className="px-4 py-3"><Badge color={hasNotes?'green':'gray'}>{hasNotes?'✓':'–'}</Badge></td>
-                    <td className="px-4 py-3"><FlashcardCountBadge unitId={u.id}/></td>
+                    <td className="px-4 py-3"><FCCount unitId={u.id}/></td>
                     <td className="px-4 py-3"><Badge color={hasQuiz?'cyan':'gray'}>{hasQuiz?'✓':'–'}</Badge></td>
                     <td className="px-4 py-3"><Badge color={u.is_active?'green':'gray'}>{u.is_active?'Active':'Hidden'}</Badge></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={()=>navigate(`/admin/units/${u.id}/questions`)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Questions"><ChevronRight size={15}/></button>
+                        <button onClick={()=>navigate(`/admin/units/${u.id}/questions`)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><ChevronRight size={15}/></button>
                         <button onClick={()=>openEdit(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"><Edit2 size={15}/></button>
                         <button onClick={()=>setDeleteConfirm(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"><Trash2 size={15}/></button>
                       </div>
@@ -263,121 +295,164 @@ export default function AdminUnits() {
         </div>
       )}
 
+      {/* Unit Modal */}
       <Modal open={modalOpen} onClose={()=>setModalOpen(false)} title={editing?`Edit: ${editing.title}`:'Add Unit'} size="xl">
-        <div className="space-y-5">
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="Order" type="number" min="1" value={form.order_index} onChange={e=>setForm(f=>({...f,order_index:e.target.value}))}/>
-            <div className="col-span-2">
-              <Field label="Unit Title *" placeholder="e.g. Characteristics of Living Things" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
+        <div className="space-y-4">
+          {/* Order + Active */}
+          <div className="flex items-center gap-4">
+            <Field label="Order" type="number" min="1" value={form.order_index} className="w-24"
+              onChange={e=>setForm(f=>({...f,order_index:e.target.value}))}/>
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer mt-5">
+              <input type="checkbox" checked={form.is_active} onChange={e=>setForm(f=>({...f,is_active:e.target.checked}))} className="w-4 h-4 accent-blue-600"/>
+              Active
+            </label>
+          </div>
+
+          {/* Language selector ON TOP */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Language</p>
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+              {LANGS.map(lang=>{
+                const hasTitleOrContent = form.titles[lang]?.trim()||form.content[lang]?.note_content?.trim()||form.content[lang]?.video_url?.trim()||(form.flashcards[lang]||[]).some(c=>c.term.trim())
+                return (
+                  <button key={lang} type="button" onClick={()=>setActiveLang(lang)}
+                    className={clsx('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                      activeLang===lang?'bg-white text-gray-900 shadow-sm':'text-gray-500 hover:text-gray-700')}>
+                    {LANG_LABELS[lang]}
+                    {hasTitleOrContent && <CheckCircle2 size={12} className="text-green-500"/>}
+                  </button>
+                )
+              })}
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <input type="checkbox" checked={form.is_active} onChange={e=>setForm(f=>({...f,is_active:e.target.checked}))} className="w-4 h-4 accent-blue-600"/>
-            Active (visible to students)
-          </label>
 
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
-            {LANGS.map(lang=>(
-              <button key={lang} type="button" onClick={()=>setActiveLang(lang)}
-                className={clsx('px-4 py-1.5 rounded-lg text-sm font-medium transition-all',
-                  activeLang===lang?'bg-white text-gray-900 shadow-sm':'text-gray-500 hover:text-gray-700')}>
-                {LANG_LABELS[lang]}
-              </button>
-            ))}
-          </div>
+          {/* Unit title per language */}
+          <Field label={`Unit Title (${LANG_LABELS[activeLang]})${activeLang==='english'?' *':''}`}
+            placeholder={`Unit title in ${LANG_LABELS[activeLang]}`}
+            value={form.titles[activeLang]}
+            onChange={e=>setForm(f=>({...f,titles:{...f.titles,[activeLang]:e.target.value}}))}/>
 
+          {/* Section switcher */}
           <div className="flex gap-2 border-b border-gray-200 pb-3">
             {[{key:'notes',icon:FileText,label:'Video + Notes'},{key:'flashcards',icon:Zap,label:'Flashcards'}].map(s=>(
               <button key={s.key} type="button" onClick={()=>setActiveSection(s.key)}
                 className={clsx('flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border-2',
                   activeSection===s.key?'border-blue-500 bg-blue-50 text-blue-700':'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50')}>
-                <s.icon size={15}/>{s.label}
-                {s.key==='flashcards'&&curCards.length>0&&<span className="bdg-blue">{curCards.length}</span>}
+                <s.icon size={14}/>{s.label}
+                {s.key==='flashcards'&&curCards.length>0&&<span className="bdg-blue text-xs">{curCards.length}</span>}
+                {/* Completion tick */}
+                {s.key==='notes'&&(cur.note_content?.trim()||cur.video_url?.trim())&&<CheckCircle2 size={12} className="text-green-500"/>}
+                {s.key==='flashcards'&&curCards.some(c=>c.term.trim())&&<CheckCircle2 size={12} className="text-green-500"/>}
               </button>
             ))}
           </div>
 
+          {/* Notes section */}
           {activeSection==='notes'&&(
             <div className="space-y-4">
               <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <label className="flex items-center gap-2 text-sm font-semibold text-blue-800 mb-2"><Video size={15}/> Lesson Video URL</label>
-                <Field placeholder="https://www.youtube.com/watch?v=... or direct MP4 URL"
+                <label className="flex items-center gap-2 text-sm font-semibold text-blue-800 mb-2"><Video size={14}/> Video URL</label>
+                <Field placeholder="https://youtube.com/watch?v=... or direct MP4"
                   value={cur.video_url} onChange={e=>setContent(activeLang,'video_url',e.target.value)}/>
-                <p className="text-xs text-blue-600 mt-1">Supports YouTube links and direct video files.</p>
+                <p className="text-xs text-blue-600 mt-1">YouTube links auto-convert to embed.</p>
               </div>
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><FileText size={14}/> Study Notes (Markdown)</label>
-                <Sel className="w-36" value={cur.status} onChange={e=>setContent(activeLang,'status',e.target.value)}>
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                </Sel>
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><FileText size={14}/> Study Notes</label>
+                <div className="flex items-center gap-2">
+                  {cur.note_content?.trim() && <CheckCircle2 size={14} className="text-green-500"/>}
+                  <Sel className="w-32" value={cur.status} onChange={e=>setContent(activeLang,'status',e.target.value)}>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published ✓</option>
+                  </Sel>
+                </div>
               </div>
               <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                💡 <strong>Tip:</strong> Use <code className="bg-amber-100 px-1 rounded">## Topic Name</code> to create expandable cards. Each ## heading becomes one clickable topic card for students.
+                💡 Use <code className="bg-amber-100 px-1 rounded">## Topic Name</code> — each ## becomes a clickable topic card for students.
               </div>
               <MarkdownEditor value={cur.note_content} onChange={val=>setContent(activeLang,'note_content',val)}
-                placeholder={`## What is Photosynthesis?\nPlants make their own food using sunlight...\n\n## The Process\n- Step 1: Light absorbed by chlorophyll\n- Step 2: CO₂ enters through leaves\n\n## Key Formula\n**6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂**`}
-                minH={280}/>
+                placeholder={`## What is ${form.titles.english||'this topic'}?\nExplain here...\n\n## Key Points\n- Point 1\n- Point 2`}
+                minH={260}/>
             </div>
           )}
 
+          {/* Flashcards section */}
           {activeSection==='flashcards'&&(
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <p className="text-sm font-semibold text-gray-700">Flashcards — {LANG_LABELS[activeLang]}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Students flip cards to memorise key terms.</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Students flip to memorise key terms.</p>
                 </div>
-                <Btn variant="white" size="sm" onClick={()=>addFlashcard(activeLang)} className="gap-1.5"><Plus size={14}/> Add Card</Btn>
+                <div className="flex gap-2 flex-wrap">
+                  <input ref={fcFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFCExcel}/>
+                  <Btn variant="white" size="sm" onClick={downloadFCTemplate} className="gap-1.5"><Download size={13}/> Template</Btn>
+                  <Btn variant="white" size="sm" onClick={()=>fcFileRef.current?.click()} className="gap-1.5"><Upload size={13}/> Excel</Btn>
+                  <Btn variant="white" size="sm" onClick={()=>addFC(activeLang)} className="gap-1.5"><Plus size={13}/> Add Card</Btn>
+                </div>
               </div>
               {curCards.length===0?(
                 <div className="text-center py-10 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                   <Zap size={28} className="text-gray-300 mx-auto mb-2"/>
-                  <p className="text-sm text-gray-500 font-medium">No flashcards yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Add cards to help students memorise key terms</p>
-                  <Btn variant="blue" size="sm" className="mt-3 gap-1.5" onClick={()=>addFlashcard(activeLang)}><Plus size={14}/> Add First Card</Btn>
+                  <p className="text-sm text-gray-500">No flashcards yet for {LANG_LABELS[activeLang]}</p>
+                  <div className="flex gap-2 justify-center mt-3">
+                    <Btn variant="blue" size="sm" onClick={()=>addFC(activeLang)} className="gap-1.5"><Plus size={13}/> Add Manually</Btn>
+                    <Btn variant="white" size="sm" onClick={()=>fcFileRef.current?.click()} className="gap-1.5"><Upload size={13}/> Upload Excel</Btn>
+                  </div>
                 </div>
               ):(
-                <div className="space-y-2 max-h-96 overflow-y-auto scroll-thin pr-1">
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                   {curCards.map((card,i)=>(
                     <FlashcardRow key={i} card={card} index={i}
-                      onChange={c=>updateFlashcard(activeLang,i,c)}
-                      onDelete={()=>deleteFlashcard(activeLang,i)}/>
+                      onChange={c=>updateFC(activeLang,i,c)} onDelete={()=>deleteFC(activeLang,i)}/>
                   ))}
                 </div>
               )}
               {curCards.length>0&&(
-                <Btn variant="white" size="sm" onClick={()=>addFlashcard(activeLang)} className="gap-1.5 w-full justify-center"><Plus size={14}/> Add Another Card</Btn>
+                <Btn variant="white" size="sm" onClick={()=>addFC(activeLang)} className="gap-1.5 w-full justify-center"><Plus size={13}/> Add More</Btn>
               )}
             </div>
           )}
 
-          <div className="flex gap-3 pt-3 border-t border-gray-100">
+          {/* Overall completion status */}
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl flex-wrap">
+            <span className="text-xs font-medium text-gray-500">Content:</span>
+            {LANGS.map(lang=>{
+              const c=form.content[lang]; const fcs=form.flashcards[lang]||[]
+              const hasNotes=c.note_content?.trim()||c.video_url?.trim()
+              const hasCards=fcs.some(x=>x.term.trim())
+              return (
+                <div key={lang} className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-500">{LANG_LABELS[lang]}</span>
+                  {hasNotes?<CheckCircle2 size={13} className="text-green-500"/>:<div className="w-3 h-3 rounded-full border-2 border-gray-300"/>}
+                  {hasCards?<Zap size={11} className="text-amber-500"/>:<Zap size={11} className="text-gray-300"/>}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="flex gap-3">
             <Btn variant="white" className="flex-1" onClick={()=>setModalOpen(false)}>Cancel</Btn>
             <Btn variant="blue" className="flex-1 gap-2" loading={saving} onClick={handleSave}>
-              <Save size={15}/> {editing?'Save Changes':'Create Unit'}
+              <Save size={14}/> {editing?'Save Changes':'Create Unit'}
             </Btn>
           </div>
         </div>
       </Modal>
 
       <Modal open={!!deleteConfirm} onClose={()=>setDeleteConfirm(null)} title="Delete Unit" size="sm">
-        <p className="text-gray-600 mb-5">Delete <strong>{deleteConfirm?.title}</strong>? All content, flashcards and questions will be removed.</p>
+        <p className="text-gray-600 mb-5">Delete <strong>{deleteConfirm?.title}</strong>? All content and questions will be removed.</p>
         <div className="flex gap-3">
           <Btn variant="white" className="flex-1" onClick={()=>setDeleteConfirm(null)}>Cancel</Btn>
-          <Btn variant="red" className="flex-1" onClick={()=>handleDelete(deleteConfirm?.id)}>Delete</Btn>
+          <Btn variant="red" className="flex-1" onClick={async()=>{ const{error}=await supabaseAdmin.from('units').delete().eq('id',deleteConfirm?.id); if(error){toast.error(error.message);return} toast.success('Deleted');setDeleteConfirm(null);fetchData() }}>Delete</Btn>
         </div>
       </Modal>
     </div>
   )
 }
 
-function FlashcardCountBadge({ unitId }) {
-  const [count,setCount] = useState(null)
-  useEffect(()=>{
-    supabaseAdmin.from('flashcards').select('id',{count:'exact',head:true}).eq('unit_id',unitId).eq('language','english')
-      .then(({count:c})=>setCount(c||0))
-  },[unitId])
-  if(count===null) return <span className="bdg-gray text-xs">…</span>
-  return <Badge color={count>0?'amber':'gray'}>{count>0?count:'–'}</Badge>
+function FCCount({unitId}){
+  const [n,setN]=useState(null)
+  useEffect(()=>{ supabaseAdmin.from('flashcards').select('id',{count:'exact',head:true}).eq('unit_id',unitId).eq('language','english').then(({count:c})=>setN(c||0)) },[unitId])
+  if(n===null) return <span className="bdg-gray text-xs">…</span>
+  return <Badge color={n>0?'amber':'gray'}>{n>0?n:'–'}</Badge>
 }
