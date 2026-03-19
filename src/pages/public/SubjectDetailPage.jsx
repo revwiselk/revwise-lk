@@ -22,10 +22,12 @@ function toEmbed(url) {
 }
 
 // Get translated value with English fallback
-function tr(translations = [], lang = 'english', field = 'title') {
-  const found = translations?.find(t => t.language === lang)
-  const fallback = translations?.find(t => t.language === 'english')
-  return (found || fallback || translations?.[0])?.[field] || ''
+function tr(translations, lang, field) {
+  if (!translations || !translations.length) return ''
+  const found = translations.find(row => row.language === lang)
+  const fallback = translations.find(row => row.language === 'english')
+  const item = found || fallback || translations[0]
+  return item?.[field] || ''
 }
 
 function parseSections(md) {
@@ -411,11 +413,11 @@ export default function SubjectDetailPage() {
   }
 
   // Get translated names using global language
-  const subjectName = tr(subject?.subject_translations, language, 'name') || subject?.name || ''
-  const subjectDesc = tr(subject?.subject_translations, language, 'description') || subject?.description || ''
+  const subjectName = subject ? (tr(subject.subject_translations, language, 'name') || subject.name || '') : ''
+  const subjectDesc = subject ? (tr(subject.subject_translations, language, 'description') || subject.description || '') : ''
 
-  const getChapterTitle = (ch) => tr(ch.chapter_translations, language, 'title') || ch.title || ''
-  const getUnitTitle = (unit) => tr(unit.unit_translations, language, 'title') || unit.title || ''
+  const getChapterTitle = (ch) => { const t = tr(ch.chapter_translations, language, 'title'); return t || ch.title || '' }
+  const getUnitTitle = (unit) => { const t = tr(unit.unit_translations, language, 'title'); return t || unit.title || '' }
 
   // Get content for current language
   const cur = unitContent.find(c => c.language === language)

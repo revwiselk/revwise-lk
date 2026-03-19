@@ -105,7 +105,7 @@ export default function StudentDashboard() {
                   {EMOJI[s.slug] || EMOJI.default}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{s.subject_translations?.find(t=>t.language===language)?.name || s.name}</p>
+                  <p className="font-semibold text-gray-900 truncate">{s.subject_translations?.find(row=>row.language===language)?.name || s.subject_translations?.find(row=>row.language==='english')?.name || s.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{s.chapters?.length || 0} chapters</p>
                 </div>
                 <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors shrink-0"/>

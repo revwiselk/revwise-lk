@@ -44,7 +44,7 @@ export default function SubjectsPage() {
   }
 
   const filtered = subjects.filter(s => {
-    const name = s.subject_translations?.find(t=>t.language===language)?.name || s.name
+    const name = s.subject_translations?.find(row=>row.language===language)?.name || s.subject_translations?.find(row=>row.language==='english')?.name || s.name
     return name.toLowerCase().includes(search.toLowerCase())
   })
 
@@ -91,8 +91,8 @@ export default function SubjectsPage() {
                   <span className="text-4xl">{st.emoji}</span>
                   <ChevronRight size={18} className="opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all"/>
                 </div>
-                <h3 className="font-bold text-xl mb-1">{s.subject_translations?.find(t=>t.language===language)?.name || s.name}</h3>
-                {(() => { const desc = s.subject_translations?.find(t=>t.language===language)?.description || s.description; return desc ? <p className="text-sm opacity-70 line-clamp-2 mb-3">{desc}</p> : null })()} 
+                <h3 className="font-bold text-xl mb-1">{s.subject_translations?.find(row=>row.language===language)?.name || s.subject_translations?.find(row=>row.language==='english')?.name || s.name}</h3>
+                {(() => { const desc = s.subject_translations?.find(row=>row.language===language)?.description || s.subject_translations?.find(row=>row.language==='english')?.description || s.description; return desc ? <p className="text-sm opacity-70 line-clamp-2 mb-3">{desc}</p> : null })()} 
                 <p className="text-xs font-medium opacity-60 flex items-center gap-1">
                   <BookOpen size={12}/> {s.chapters?.length || 0} chapters
                 </p>

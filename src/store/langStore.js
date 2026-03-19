@@ -12,9 +12,10 @@ export const useLangStore = create(
 )
 
 // Helper: get translated field with english fallback
-export function t(translations = [], language = 'english', field = 'title') {
-  const found = translations.find(t => t.language === language)
-  const fallback = translations.find(t => t.language === 'english')
+export function tr(translations, language, field) {
+  if (!translations || !translations.length) return ''
+  const found = translations.find(row => row.language === language)
+  const fallback = translations.find(row => row.language === 'english')
   const item = found || fallback || translations[0]
   return item?.[field] || ''
 }

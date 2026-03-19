@@ -52,13 +52,14 @@ export default function AdminChapters() {
     setEditing(c); setActiveLang('english')
     const titles={english:c.title||'',sinhala:'',tamil:''}
     const descs={english:c.description||'',sinhala:'',tamil:''}
-    // Load existing translations (sinhala & tamil)
+    // Load ALL existing translations (including english from translation table if exists)
     ;(c.chapter_translations||[]).forEach(tr=>{
-      if(tr.language!=='english'){
-        titles[tr.language]=tr.title||''
-        descs[tr.language]=tr.description||''
-      }
+      titles[tr.language] = tr.title || ''
+      descs[tr.language] = tr.description || ''
     })
+    // Always ensure english fallback from main column
+    if (!titles.english) titles.english = c.title || ''
+    if (!descs.english) descs.english = c.description || ''
     setForm({ order_index:c.order_index, is_active:c.is_active, titles, descs })
     setModalOpen(true)
   }

@@ -141,8 +141,12 @@ export default function AdminUnits() {
   const openEdit = async (u) => {
     setEditing(u); setActiveLang('english'); setActiveSection('notes')
     const titles={english:u.title||'',sinhala:'',tamil:''}
-    // Load existing translations
-    ;(u.unit_translations||[]).forEach(tr=>{if(tr.language!=='english') titles[tr.language]=tr.title||''})
+    // Load ALL existing translations from translation table
+    ;(u.unit_translations||[]).forEach(tr=>{
+      titles[tr.language] = tr.title || ''
+    })
+    // Always ensure english fallback from main column
+    if (!titles.english) titles.english = u.title || ''
     const content={english:{note_content:'',video_url:'',status:'published'},sinhala:{note_content:'',video_url:'',status:'draft'},tamil:{note_content:'',video_url:'',status:'draft'}}
     ;(u.unit_content||[]).forEach(c=>{content[c.language]={note_content:c.note_content||'',video_url:c.video_url||'',status:c.status||'draft'}})
     const {data:fcData}=await supabaseAdmin.from('flashcards').select('*').eq('unit_id',u.id).order('order_index')
