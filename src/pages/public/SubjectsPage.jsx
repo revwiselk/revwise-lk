@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { EmptyState } from '@/components/ui'
 import { BookOpen, Search, ChevronRight } from 'lucide-react'
+import { useLangStore } from '@/store/langStore'
 import clsx from 'clsx'
 
 const GRADES = [6,7,8,9,10,11]
@@ -23,6 +24,7 @@ const STYLE = {
 
 export default function SubjectsPage() {
   const navigate = useNavigate()
+  const { language } = useLangStore()
   const [params, setParams] = useSearchParams()
   const [subjects, setSubjects] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,13 +37,16 @@ export default function SubjectsPage() {
     setLoading(true)
     const { data } = await supabase
       .from('subjects')
-      .select('id, slug, name, description, grade, chapters(id)')
+      .select('id, slug, name, description, grade, chapters(id), subject_translations(language, name, description)')
       .eq('grade', grade).eq('is_active', true).order('order_index')
     setSubjects(data || [])
     setLoading(false)
   }
 
-  const filtered = subjects.filter(s => s.name.toLowerCase().includes(search.toLowerCase()))
+  const filtered = subjects.filter(s => {
+    const name = s.subject_translations?.find(t=>t.language===language)?.name || s.name
+    return name.toLowerCase().includes(search.toLowerCase())
+  })
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
@@ -86,8 +91,8 @@ export default function SubjectsPage() {
                   <span className="text-4xl">{st.emoji}</span>
                   <ChevronRight size={18} className="opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all"/>
                 </div>
-                <h3 className="font-bold text-xl mb-1">{s.name}</h3>
-                {s.description && <p className="text-sm opacity-70 line-clamp-2 mb-3">{s.description}</p>}
+                <h3 className="font-bold text-xl mb-1">{s.subject_translations?.find(t=>t.language===language)?.name || s.name}</h3>
+                {(() => { const desc = s.subject_translations?.find(t=>t.language===language)?.description || s.description; return desc ? <p className="text-sm opacity-70 line-clamp-2 mb-3">{desc}</p> : null })()} 
                 <p className="text-xs font-medium opacity-60 flex items-center gap-1">
                   <BookOpen size={12}/> {s.chapters?.length || 0} chapters
                 </p>

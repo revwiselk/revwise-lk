@@ -33,7 +33,7 @@ export default function AdminChapters() {
     const [sRes, cRes] = await Promise.all([
       supabaseAdmin.from('subjects').select('id,name,grade').eq('id',subjectId).single(),
       supabaseAdmin.from('chapters')
-        .select('id,order_index,title,description,is_active,units(id)')
+        .select('id,order_index,title,description,is_active,units(id),chapter_translations(language,title,description)')
         .eq('subject_id',subjectId).order('order_index'),
     ])
     if (sRes.data) setSubject(sRes.data)
@@ -50,9 +50,16 @@ export default function AdminChapters() {
 
   const openEdit = (c) => {
     setEditing(c); setActiveLang('english')
-    setForm({ order_index:c.order_index, is_active:c.is_active,
-      titles:{english:c.title||'',sinhala:'',tamil:''},
-      descs:{english:c.description||'',sinhala:'',tamil:''} })
+    const titles={english:c.title||'',sinhala:'',tamil:''}
+    const descs={english:c.description||'',sinhala:'',tamil:''}
+    // Load existing translations (sinhala & tamil)
+    ;(c.chapter_translations||[]).forEach(tr=>{
+      if(tr.language!=='english'){
+        titles[tr.language]=tr.title||''
+        descs[tr.language]=tr.description||''
+      }
+    })
+    setForm({ order_index:c.order_index, is_active:c.is_active, titles, descs })
     setModalOpen(true)
   }
 
@@ -65,11 +72,29 @@ export default function AdminChapters() {
     if (editing) {
       const { error } = await supabaseAdmin.from('chapters').update(payload).eq('id',editing.id)
       if (error) { toast.error(error.message); setSaving(false); return }
+      // Save translations
+      for (const lang of LANGS) {
+        if (form.titles[lang].trim()) {
+          await supabaseAdmin.from('chapter_translations').upsert(
+            { chapter_id: editing.id, language: lang, title: form.titles[lang].trim(), description: form.descs[lang]||null },
+            { onConflict: 'chapter_id,language' }
+          )
+        }
+      }
       toast.success('Chapter updated')
     } else {
-      const { error } = await supabaseAdmin.from('chapters').insert(payload)
+      const { error, data: newCh } = await supabaseAdmin.from('chapters').insert(payload).select().single()
       if (error) { toast.error(error.message); setSaving(false); return }
-      toast.success('Chapter created in 3 languages')
+      // Save translations for all languages
+      for (const lang of LANGS) {
+        if (form.titles[lang].trim()) {
+          await supabaseAdmin.from('chapter_translations').upsert(
+            { chapter_id: newCh.id, language: lang, title: form.titles[lang].trim(), description: form.descs[lang]||null },
+            { onConflict: 'chapter_id,language' }
+          )
+        }
+      }
+      toast.success('Chapter created in ' + LANGS.filter(l=>form.titles[l].trim()).length + ' language(s)')
     }
     setSaving(false); setModalOpen(false); fetchData()
   }

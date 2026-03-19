@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { EmptyState, Badge } from '@/components/ui'
 import { BookOpen, ChevronRight, GraduationCap, Clock, Flame } from 'lucide-react'
+import { useLangStore } from '@/store/langStore'
 import clsx from 'clsx'
 
 const EMOJI = { science:'🔬', mathematics:'📐', sinhala:'📖', english:'📝', history:'🏛️', geography:'🌍', health:'🏃', religion:'☸️', tamil:'📜', default:'📚' }
@@ -15,6 +16,7 @@ function greeting() {
 
 export default function StudentDashboard() {
   const { user, profile } = useAuthStore()
+  const { language } = useLangStore()
   const navigate = useNavigate()
   const [subjects, setSubjects] = useState([])
   const [attempts, setAttempts] = useState([])
@@ -26,7 +28,7 @@ export default function StudentDashboard() {
   const fetchData = async () => {
     setLoading(true)
     const [sRes, aRes] = await Promise.all([
-      supabase.from('subjects').select('id, slug, name, grade, chapters(id)').eq('grade', grade).eq('is_active', true).order('order_index'),
+      supabase.from('subjects').select('id, slug, name, grade, chapters(id), subject_translations(language, name)').eq('grade', grade).eq('is_active', true).order('order_index'),
       supabase.from('quiz_attempts')
         .select('id, score, max_score, percent_score, passed, submitted_at, quizzes(id, units(id, title))')
         .eq('student_id', user?.id).not('submitted_at','is',null)
@@ -103,7 +105,7 @@ export default function StudentDashboard() {
                   {EMOJI[s.slug] || EMOJI.default}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{s.name}</p>
+                  <p className="font-semibold text-gray-900 truncate">{s.subject_translations?.find(t=>t.language===language)?.name || s.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{s.chapters?.length || 0} chapters</p>
                 </div>
                 <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors shrink-0"/>

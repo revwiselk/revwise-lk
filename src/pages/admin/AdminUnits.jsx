@@ -118,7 +118,7 @@ export default function AdminUnits() {
     const [cRes,uRes] = await Promise.all([
       supabaseAdmin.from('chapters').select('id,title,order_index,subjects(id,name,grade)').eq('id',chapterId).single(),
       supabaseAdmin.from('units')
-        .select('id,order_index,title,is_active,unit_content(language,note_content,video_url,status),quizzes!quizzes_unit_id_fkey(id,is_active)')
+        .select('id,order_index,title,is_active,unit_content(language,note_content,video_url,status),quizzes!quizzes_unit_id_fkey(id,is_active),unit_translations(language,title)')
         .eq('chapter_id',chapterId).order('order_index'),
     ])
     if(cRes.data) setChapter(cRes.data)
@@ -141,6 +141,8 @@ export default function AdminUnits() {
   const openEdit = async (u) => {
     setEditing(u); setActiveLang('english'); setActiveSection('notes')
     const titles={english:u.title||'',sinhala:'',tamil:''}
+    // Load existing translations
+    ;(u.unit_translations||[]).forEach(tr=>{if(tr.language!=='english') titles[tr.language]=tr.title||''})
     const content={english:{note_content:'',video_url:'',status:'published'},sinhala:{note_content:'',video_url:'',status:'draft'},tamil:{note_content:'',video_url:'',status:'draft'}}
     ;(u.unit_content||[]).forEach(c=>{content[c.language]={note_content:c.note_content||'',video_url:c.video_url||'',status:c.status||'draft'}})
     const {data:fcData}=await supabaseAdmin.from('flashcards').select('*').eq('unit_id',u.id).order('order_index')
@@ -164,6 +166,15 @@ export default function AdminUnits() {
         if(error) throw error
         unitId=newUnit.id
         await supabaseAdmin.from('quizzes').insert({unit_id:unitId,quiz_type:'practice',pass_mark_percent:50,is_active:true})
+      }
+      // Save unit translations for all 3 languages
+      for(const lang of LANGS){
+        if(form.titles[lang]?.trim()){
+          await supabaseAdmin.from('unit_translations').upsert(
+            {unit_id:unitId, language:lang, title:form.titles[lang].trim()},
+            {onConflict:'unit_id,language'}
+          )
+        }
       }
       for(const lang of LANGS){
         const c=form.content[lang]

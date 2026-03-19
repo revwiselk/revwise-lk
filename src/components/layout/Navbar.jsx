@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { LogOut, LayoutDashboard, BookOpen, Shield, Home, Menu, X } from 'lucide-react'
+import LangSwitcher from '@/components/ui/LangSwitcher'
 import clsx from 'clsx'
 
 export default function Navbar() {
@@ -38,6 +39,9 @@ export default function Navbar() {
             <NavLink to="/" end className={navCls}><Home size={15}/>Home</NavLink>
             <NavLink to="/subjects" className={navCls}><BookOpen size={15}/>Subjects</NavLink>
           </nav>
+
+          {/* Language switcher — desktop */}
+          <LangSwitcher/>
 
           {/* Desktop right side */}
           <div className="hidden md:flex items-center gap-2">
@@ -86,6 +90,7 @@ export default function Navbar() {
 
         {/* ── Mobile: nav links always visible below header ── */}
         <div className="md:hidden flex items-center gap-1 pb-2 border-t border-gray-100 pt-2">
+          <LangSwitcher/>
           <NavLink to="/" end
             className={({ isActive }) => clsx(
               'flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all flex-1 justify-center',
