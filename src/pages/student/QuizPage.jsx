@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
+import { useLangStore } from '@/store/langStore'
 import { Btn, ProgBar, Field, Txt } from '@/components/ui'
 import { ArrowLeft, ArrowRight, Clock, AlertCircle, CheckCircle2, XCircle, Trophy, RotateCcw, MessageSquare, Send } from 'lucide-react'
 import clsx from 'clsx'
@@ -9,6 +10,7 @@ import clsx from 'clsx'
 export default function QuizPage() {
   const { quizId } = useParams()
   const { user } = useAuthStore()
+  const { language } = useLangStore()
   const navigate = useNavigate()
 
   const [quiz, setQuiz] = useState(null)
@@ -54,8 +56,14 @@ export default function QuizPage() {
 
   const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
-  const getTrans = (arr = [], lang = 'english') =>
-    arr.find(t => t.language === lang) || arr.find(t => t.language === 'english') || arr[0]
+  // Get translation for current language with English fallback
+  const getTrans = (arr = [], langOverride = null) => {
+    const lang = langOverride || language || 'english'
+    if (!arr || !arr.length) return null
+    return arr.find(row => row.language === lang)
+        || arr.find(row => row.language === 'english')
+        || arr[0]
+  }
 
   const q = questions[idx]
 
@@ -82,7 +90,7 @@ export default function QuizPage() {
     // Save attempt only if logged in
     if (user) {
       const { data: attempt } = await supabase.from('quiz_attempts').insert({
-        quiz_id: quizId, student_id: user.id, language: 'english',
+        quiz_id: quizId, student_id: user.id, language: language || 'english',
         started_at: startedAt.current.toISOString(),
         submitted_at: new Date().toISOString(),
         score, max_score: maxScore, passed, time_taken_seconds: timeTaken,
