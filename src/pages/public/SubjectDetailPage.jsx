@@ -223,21 +223,30 @@ function VideoPlayer({ url }) {
 
 // ── Flashcard deck ─────────────────────────────────────────────────────────
 function FlashcardDeck({ unitId, language, onComplete }) {
-  const [cards, setCards] = useState([]); const [loading, setLoading] = useState(true)
-  const [idx, setIdx] = useState(0); const [flipped, setFlipped] = useState(false)
-  const [known, setKnown] = useState([]); const [hint, setHint] = useState(false)
+  const [cards, setCards] = useState([])
+  const [loading, setLoading] = useState(true)
+  // queue = array of card indices not yet marked "known"
+  // We always show queue[0], skip moves it to the back, got-it removes it
+  const [queue, setQueue] = useState([])
+  const [known, setKnown] = useState([])
+  const [flipped, setFlipped] = useState(false)
+  const [hint, setHint] = useState(false)
 
   useEffect(() => {
-    setLoading(true); setIdx(0); setFlipped(false); setKnown([]); setHint(false)
+    setLoading(true); setFlipped(false); setKnown([]); setHint(false); setQueue([])
     supabase.from('flashcards').select('*').eq('unit_id', unitId).eq('language', language).order('order_index')
       .then(({ data }) => {
-        if (data?.length) { setCards(data); setLoading(false) }
+        if (data?.length) { setCards(data); setQueue(data.map((_, i) => i)); setLoading(false) }
         else supabase.from('flashcards').select('*').eq('unit_id', unitId).eq('language', 'english').order('order_index')
-          .then(({ data: d }) => { setCards(d || []); setLoading(false) })
+          .then(({ data: d }) => {
+            const arr = d || []
+            setCards(arr); setQueue(arr.map((_, i) => i)); setLoading(false)
+          })
       })
   }, [unitId, language])
 
   if (loading) return <div className="skeleton h-56 rounded-2xl" />
+
   if (!cards.length) return (
     <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-center">
       <Zap size={32} className="text-gray-300 mb-3" />
@@ -247,41 +256,34 @@ function FlashcardDeck({ unitId, language, onComplete }) {
     </div>
   )
 
-  // Use cursor position within the remaining (non-known) cards
-  const remaining = cards.filter((_, i) => !known.includes(i))
-
-  if (!remaining.length) return (
+  // All cards mastered
+  if (queue.length === 0 && known.length === cards.length) return (
     <div className="flex flex-col items-center justify-center py-10 bg-green-50 rounded-2xl border-2 border-green-200 text-center">
       <div className="text-5xl mb-3">🎉</div>
       <p className="font-bold text-xl text-gray-900">All {cards.length} done!</p>
       <div className="flex gap-3 mt-4">
-        <button onClick={() => { setKnown([]); setIdx(0); setFlipped(false) }} className="btn-md btn-white gap-2"><RotateCcw size={15} /> Again</button>
+        <button onClick={() => { setKnown([]); setQueue(cards.map((_, i) => i)); setFlipped(false) }}
+          className="btn-md btn-white gap-2"><RotateCcw size={15} /> Again</button>
         <button onClick={() => onComplete?.()} className="btn-md btn-blue gap-2">Quiz <ChevronRight size={15} /></button>
       </div>
     </div>
   )
 
-  // clamp idx to valid range within remaining
-  const cursorIdx = idx >= remaining.length ? 0 : idx
-  const card = remaining[cursorIdx]
-  const origIdx = cards.indexOf(card)
+  const cardIdx = queue[0]
+  const card = cards[cardIdx]
   const progress = Math.round((known.length / cards.length) * 100)
 
-  const goNext = () => {
-    // Move to next in remaining, wrap to 0 at end
-    const nextIdx = cursorIdx + 1 >= remaining.length ? 0 : cursorIdx + 1
-    setIdx(nextIdx)
+  // Skip: move current card to back of queue
+  const skip = () => {
+    setQueue(q => { const [first, ...rest] = q; return [...rest, first] })
     setFlipped(false)
     setHint(false)
   }
 
-  const markKnown = () => {
-    setKnown(k => [...k, origIdx])
-    // After removing this card, idx might be out of range — reset to 0 if needed
-    const newRemaining = remaining.filter((_, i) => i !== cursorIdx)
-    if (newRemaining.length === 0) return // all done, handled above
-    const nextCursor = cursorIdx >= newRemaining.length ? 0 : cursorIdx
-    setIdx(nextCursor)
+  // Got it: remove current card from queue, add to known
+  const gotIt = () => {
+    setKnown(k => [...k, cardIdx])
+    setQueue(q => q.slice(1))
     setFlipped(false)
     setHint(false)
   }
@@ -290,7 +292,7 @@ function FlashcardDeck({ unitId, language, onComplete }) {
     <div className="max-w-lg mx-auto">
       <div className="flex justify-between text-xs text-gray-500 mb-2">
         <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-green-500" />{known.length}/{cards.length} known</span>
-        <span>{remaining.length} remaining</span>
+        <span>{queue.length} remaining</span>
       </div>
       <div className="h-2 bg-gray-200 rounded-full mb-5 overflow-hidden">
         <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: progress + '%' }} />
@@ -314,8 +316,8 @@ function FlashcardDeck({ unitId, language, onComplete }) {
         )}
       </div>
       <div className="flex gap-3 mt-4">
-        <button onClick={markKnown} className="btn-lg btn-green flex-1 gap-2"><CheckCircle2 size={18} /> Got it!</button>
-        <button onClick={goNext} className="btn-lg btn-white flex-1 gap-2"><ChevronRight size={18} /> Skip</button>
+        <button onClick={gotIt} className="btn-lg btn-green flex-1 gap-2"><CheckCircle2 size={18} /> Got it!</button>
+        <button onClick={skip} className="btn-lg btn-white flex-1 gap-2"><ChevronRight size={18} /> Skip</button>
       </div>
     </div>
   )

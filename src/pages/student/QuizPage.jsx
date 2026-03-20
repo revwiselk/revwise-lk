@@ -7,6 +7,81 @@ import { Btn, ProgBar, Field, Txt } from '@/components/ui'
 import { ArrowLeft, ArrowRight, Clock, AlertCircle, CheckCircle2, XCircle, Trophy, RotateCcw, MessageSquare, Send } from 'lucide-react'
 import clsx from 'clsx'
 
+// ── Answer review collapsible component ───────────────────────────────────
+function AnswerReview({ qs, ans, getTrans }) {
+  const [open, setOpen] = useState(false)
+  const correct = qs.filter(q => {
+    const sel = ans[q.id]
+    return sel && (q.answer_options?.find(o => o.id === sel)?.is_correct ?? false)
+  }).length
+
+  return (
+    <div className="card overflow-hidden">
+      <button onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors">
+        <div className="flex items-center gap-3">
+          <span className="font-bold text-gray-900 text-sm">Answer Review</span>
+          <span className="text-xs text-gray-500">{correct}/{qs.length} correct</span>
+          <span className="flex gap-1">
+            {qs.map((q,i) => {
+              const sel = ans[q.id]
+              const ok = sel && (q.answer_options?.find(o => o.id === sel)?.is_correct ?? false)
+              return <span key={i} className={"w-2 h-2 rounded-full " + (ok ? 'bg-green-500' : sel ? 'bg-red-400' : 'bg-gray-300')}/>
+            })}
+          </span>
+        </div>
+        <ChevronDown size={16} className={"text-gray-400 transition-transform " + (open ? 'rotate-180' : '')}/>
+      </button>
+      {open && (
+        <div className="border-t border-gray-100 divide-y divide-gray-50">
+          {qs.map((q, i) => {
+            const qTrans = getTrans(q.question_translations)
+            const selId = ans[q.id]
+            const isCorrect = selId ? (q.answer_options?.find(o => o.id === selId)?.is_correct ?? false) : false
+            const notAnswered = !selId
+            return (
+              <div key={q.id} className={"px-5 py-4 " + (isCorrect ? 'bg-green-50/40' : notAnswered ? '' : 'bg-red-50/40')}>
+                <div className="flex items-start gap-3 mb-2.5">
+                  <div className={"w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold " +
+                    (isCorrect ? 'bg-green-100 text-green-700' : notAnswered ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600')}>
+                    {i + 1}
+                  </div>
+                  <p className="text-sm font-medium text-gray-800 leading-relaxed flex-1">{qTrans?.question_text}</p>
+                  {isCorrect ? <CheckCircle2 size={16} className="text-green-500 shrink-0 mt-0.5"/>
+                    : notAnswered ? <span className="text-xs text-gray-400 shrink-0 mt-1">Skipped</span>
+                    : <XCircle size={16} className="text-red-400 shrink-0 mt-0.5"/>}
+                </div>
+                <div className="space-y-1 ml-9">
+                  {[...(q.answer_options || [])].sort((a, b) => a.order_index - b.order_index).map(opt => {
+                    const oTrans = getTrans(opt.answer_option_translations)
+                    const wasSel = opt.id === selId
+                    return (
+                      <div key={opt.id} className={"flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs " +
+                        (opt.is_correct ? 'bg-green-100 text-green-800 font-medium'
+                          : wasSel ? 'bg-red-100 text-red-700 line-through'
+                          : 'text-gray-400')}>
+                        {opt.is_correct ? <CheckCircle2 size={11} className="text-green-600 shrink-0"/>
+                          : wasSel ? <XCircle size={11} className="text-red-500 shrink-0"/>
+                          : <div className="w-2.5 h-2.5 rounded-full border border-gray-200 shrink-0"/>}
+                        {oTrans?.option_text}
+                      </div>
+                    )
+                  })}
+                </div>
+                {qTrans?.explanation && (
+                  <div className="mt-2 ml-9 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
+                    <p className="text-xs text-blue-700"><strong>Explanation: </strong>{qTrans.explanation}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function QuizPage() {
   const { quizId } = useParams()
   const { user } = useAuthStore()
@@ -136,153 +211,123 @@ export default function QuizPage() {
     </div>
   )
 
-  // ── Result + Feedback ────────────────────────────────────────────────────
+  // ── Result ──────────────────────────────────────────────────────────────
   if (phase === 'result' || phase === 'feedback') {
     const { score, maxScore, pct, passed, questions: qs, answers: ans } = result
     const msg = pct >= 90 ? { t: 'Outstanding! 🏆', c: 'text-amber-500' }
               : pct >= 75 ? { t: 'Great work! 🎉', c: 'text-blue-600' }
               : pct >= 50 ? { t: 'Well done! 👍', c: 'text-blue-500' }
-              : { t: 'Keep practising! 💪', c: 'text-gray-500' }
-    const R = 52, C = 2 * Math.PI * R
+              : { t: 'Keep practising! 💪', c: 'text-gray-600' }
+    const R = 48, C = 2 * Math.PI * R
+    const correct = qs.filter(q => {
+      const sel = ans[q.id]
+      return sel && (q.answer_options?.find(o => o.id === sel)?.is_correct ?? false)
+    }).length
 
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Score card */}
-        <div className="card p-8 text-center mb-6 animate-scale-in">
-          <div className="flex justify-center mb-5">
-            <div className="relative w-36 h-36">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+
+        {/* ── Score card ── */}
+        <div className="card p-5 sm:p-8 text-center animate-scale-in">
+          {/* Circle score */}
+          <div className="flex justify-center mb-4">
+            <div className="relative w-28 h-28 sm:w-36 sm:h-36">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r={R} fill="none" stroke="#e5e7eb" strokeWidth="10"/>
                 <circle cx="60" cy="60" r={R} fill="none"
                   stroke={passed ? '#2563eb' : '#ef4444'} strokeWidth="10" strokeLinecap="round"
                   strokeDasharray={C} strokeDashoffset={C - (pct / 100) * C}
-                  style={{ transition: 'stroke-dashoffset 1s ease' }}/>
+                  style={{ transition: 'stroke-dashoffset 1.2s ease' }}/>
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="font-bold text-3xl text-gray-900">{pct}%</span>
+                <span className="font-bold text-2xl sm:text-3xl text-gray-900">{pct}%</span>
                 <span className="text-xs text-gray-400">{score}/{maxScore}</span>
               </div>
             </div>
           </div>
-          <h1 className={clsx('font-bold text-2xl mb-2', msg.c)}>{msg.t}</h1>
-          <p className="text-gray-500 mb-4">You scored <strong className="text-gray-800">{score} out of {maxScore}</strong> marks</p>
-          <span className={clsx('bdg text-sm px-4 py-1.5', passed ? 'bdg-green' : 'bdg-red')}>
-            {passed ? <span className="flex items-center gap-1.5"><Trophy size={14}/> Passed!</span>
-                    : <span className="flex items-center gap-1.5"><RotateCcw size={14}/> Failed</span>}
+          <h1 className={"font-bold text-xl sm:text-2xl mb-1 " + msg.c}>{msg.t}</h1>
+          <p className="text-gray-500 text-sm mb-3">
+            You scored <strong className="text-gray-800">{score} out of {maxScore}</strong> marks
+            · <span className="font-medium">{correct}/{qs.length}</span> correct
+          </p>
+          <span className={"inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold " + (passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600')}>
+            {passed ? <><Trophy size={14}/> Passed!</> : <><RotateCcw size={14}/> Try again</>}
           </span>
-
           {!user && (
-            <p className="mt-4 text-sm text-blue-600 bg-blue-50 rounded-xl px-4 py-2">
-              <strong>Want to save your scores?</strong>{' '}
-              <a href="/register" className="underline">Create a free account →</a>
+            <p className="mt-4 text-xs text-blue-600 bg-blue-50 rounded-xl px-4 py-2">
+              <strong>Save your scores</strong> — <a href="/register" className="underline">Create a free account →</a>
             </p>
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 mb-8">
-          <Btn variant="white" size="lg" className="flex-1" onClick={() => navigate(-2)}>← Back to Unit</Btn>
-          <Btn variant="blue" size="lg" className="flex-1 gap-2" onClick={() => { setPhase('quiz'); setAnswers({}); setIdx(0); setResult(null); startedAt.current = new Date() }}>
-            <RotateCcw size={16}/> Retake
+        {/* ── Action buttons ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <Btn variant="white" className="gap-2 justify-center" onClick={() => navigate(-1)}>
+            <ArrowLeft size={15}/> Back
           </Btn>
+          <Btn variant="white" className="gap-2 justify-center" onClick={() => { setPhase('quiz'); setAnswers({}); setIdx(0); setResult(null); startedAt.current = new Date() }}>
+            <RotateCcw size={15}/> Retake
+          </Btn>
+          {quiz?.unit_id && (
+            <Btn variant="blue" className="col-span-2 sm:col-span-1 gap-2 justify-center"
+              onClick={() => navigate('/subjects/' + (quiz.subject_id || ''), { replace: false })}>
+              Next Unit →
+            </Btn>
+          )}
         </div>
 
-        {/* Feedback section */}
-        <div className="card p-6 mb-8">
-          <h2 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-            <MessageSquare size={18} className="text-blue-500"/> Share Your Feedback
+        {/* ── Answer review (collapsible) ── */}
+        <AnswerReview qs={qs} ans={ans} getTrans={getTrans} />
+
+        {/* ── Feedback ── */}
+        <div className="card p-5">
+          <h2 className="font-bold text-base text-gray-900 mb-4 flex items-center gap-2">
+            <MessageSquare size={16} className="text-blue-500"/> Share Feedback
           </h2>
           {feedbackSent ? (
-            <div className="text-center py-4">
-              <CheckCircle2 size={36} className="text-green-500 mx-auto mb-2"/>
-              <p className="font-medium text-gray-800">Thank you for your feedback! 🙏</p>
+            <div className="text-center py-3">
+              <CheckCircle2 size={32} className="text-green-500 mx-auto mb-2"/>
+              <p className="font-medium text-gray-800 text-sm">Thank you! 🙏</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Category selection */}
+            <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">What is your feedback about?</p>
-                <div className="flex flex-wrap gap-2">
-                  {['Quiz difficulty','Question quality','Explanation clarity','Content accuracy','Technical issue','General feedback'].map(cat => (
+                <p className="text-xs font-medium text-gray-600 mb-2">Category</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Quiz difficulty','Question quality','Explanation clarity','Content accuracy','Technical issue','General'].map(cat => (
                     <button key={cat} type="button" onClick={() => setFeedback(f => ({ ...f, category: cat }))}
-                      className={clsx('px-3 py-1.5 rounded-xl text-xs font-medium border-2 transition-all',
-                        feedback.category === cat
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50')}>
+                      className={"px-2.5 py-1 rounded-lg text-xs font-medium border-2 transition-all " + (feedback.category === cat
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300')}>
                       {cat}
                     </button>
                   ))}
                 </div>
               </div>
-              {/* Star rating */}
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Rate this quiz</p>
-                <div className="flex gap-2">
+                <p className="text-xs font-medium text-gray-600 mb-2">Rating</p>
+                <div className="flex items-center gap-1">
                   {[1,2,3,4,5].map(star => (
                     <button key={star} type="button" onClick={() => setFeedback(f => ({ ...f, rating: star }))}
-                      className={clsx('text-3xl transition-all hover:scale-110', feedback.rating >= star ? 'text-amber-400' : 'text-gray-200')}>
+                      className={"text-2xl sm:text-3xl transition-all hover:scale-110 " + (feedback.rating >= star ? 'text-amber-400' : 'text-gray-200')}>
                       ★
                     </button>
                   ))}
-                  {feedback.rating > 0 && <span className="text-xs text-gray-400 self-end pb-1 ml-1">{['','Poor','Fair','Good','Great','Excellent'][feedback.rating]}</span>}
+                  {feedback.rating > 0 && <span className="text-xs text-gray-400 ml-2">{['','Poor','Fair','Good','Great','Excellent'][feedback.rating]}</span>}
                 </div>
               </div>
               <Field label="Your name (optional)" placeholder="Kasun Perera"
                 value={feedback.name} onChange={e => setFeedback(f => ({ ...f, name: e.target.value }))}/>
-              <Txt label="Comments *" placeholder="Tell us what you thought about this quiz…"
+              <Txt label="Comments *" placeholder="Tell us what you thought…"
                 value={feedback.body} onChange={e => setFeedback(f => ({ ...f, body: e.target.value }))}
-                className="min-h-[80px]"/>
+                className="min-h-[70px]"/>
               <Btn variant="blue" onClick={handleFeedback} disabled={!feedback.body.trim()} className="w-full justify-center gap-2">
-                <Send size={15}/> Send Feedback
+                <Send size={14}/> Send Feedback
               </Btn>
             </div>
           )}
         </div>
 
-        {/* Answer review */}
-        <h2 className="font-bold text-lg text-gray-900 mb-4">Answer Review</h2>
-        <div className="space-y-4">
-          {qs.map((q, i) => {
-            const qTrans = getTrans(q.question_translations)
-            const selId = ans[q.id]
-            const isCorrect = selId ? (q.answer_options?.find(o => o.id === selId)?.is_correct ?? false) : false
-            return (
-              <div key={q.id} className={clsx('card p-5 border-2', isCorrect ? 'border-green-200 bg-green-50/30' : 'border-red-200 bg-red-50/30')}>
-                <div className="flex items-start gap-3 mb-3">
-                  <div className={clsx('w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5', isCorrect ? 'bg-green-100' : 'bg-red-100')}>
-                    {isCorrect ? <CheckCircle2 size={14} className="text-green-600"/> : <XCircle size={14} className="text-red-500"/>}
-                  </div>
-                  <p className="text-sm font-medium text-gray-800 leading-relaxed">
-                    <span className="text-gray-400 font-normal mr-1">Q{i+1}.</span>
-                    {qTrans?.question_text}
-                  </p>
-                </div>
-                <div className="space-y-1.5 ml-9">
-                  {[...(q.answer_options || [])].sort((a, b) => a.order_index - b.order_index).map(opt => {
-                    const oTrans = getTrans(opt.answer_option_translations)
-                    const wasSel = opt.id === selId
-                    return (
-                      <div key={opt.id} className={clsx('flex items-center gap-2 px-3 py-2 rounded-lg text-sm',
-                        opt.is_correct ? 'bg-green-100 text-green-800 font-medium'
-                          : wasSel ? 'bg-red-100 text-red-700 line-through'
-                          : 'text-gray-500')}>
-                        {opt.is_correct ? <CheckCircle2 size={12} className="text-green-600 shrink-0"/>
-                          : wasSel ? <XCircle size={12} className="text-red-500 shrink-0"/>
-                          : <div className="w-3 h-3 rounded-full border border-gray-300 shrink-0"/>}
-                        {oTrans?.option_text}
-                      </div>
-                    )
-                  })}
-                </div>
-                {qTrans?.explanation && (
-                  <div className="mt-3 ml-9 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <p className="text-xs text-blue-700"><strong>Explanation: </strong>{qTrans.explanation}</p>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
       </div>
     )
   }
