@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { useLangStore } from '@/store/langStore'
 import { Btn, ProgBar, Field, Txt } from '@/components/ui'
-import { ArrowLeft, ArrowRight, Clock, AlertCircle, CheckCircle2, XCircle, Trophy, RotateCcw, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Clock, AlertCircle, CheckCircle2, XCircle, Trophy, RotateCcw, MessageSquare, Send, ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
 
 // ── Answer review collapsible component ───────────────────────────────────
@@ -107,7 +107,7 @@ export default function QuizPage() {
   const fetchQuiz = async () => {
     setLoading(true)
     const [qzRes, questRes] = await Promise.all([
-      supabase.from('quizzes').select('*').eq('id', quizId).single(),
+      supabase.from('quizzes').select('*, units!quizzes_unit_id_fkey(id, chapter_id, chapters!units_chapter_id_fkey(subject_id))').eq('id', quizId).single(),
       supabase.from('questions')
         .select(`id, question_type, order_index, marks, image_url,
           question_translations(language, question_text, explanation),
@@ -270,7 +270,7 @@ export default function QuizPage() {
           </Btn>
           {quiz?.unit_id && (
             <Btn variant="blue" className="col-span-2 sm:col-span-1 gap-2 justify-center"
-              onClick={() => navigate('/subjects/' + (quiz.subject_id || ''), { replace: false })}>
+              onClick={() => { const subjectId = quiz?.units?.chapters?.subject_id; if(subjectId) navigate('/subjects/' + subjectId); else navigate(-1) }}>
               Next Unit →
             </Btn>
           )}
