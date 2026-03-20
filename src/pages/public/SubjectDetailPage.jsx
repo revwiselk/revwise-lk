@@ -395,8 +395,21 @@ export default function SubjectDetailPage() {
         .sort((a, b) => a.order_index - b.order_index)
     }))
     setChapters(chaps)
-    // Chapters start collapsed — user opens them manually
     setExpanded({})
+    // Load progress from DB if logged in, merge with localStorage
+    if (user) {
+      const { data: progressData } = await supabase
+        .from('unit_progress')
+        .select('unit_id')
+        .eq('user_id', user.id)
+        .eq('completed', true)
+      if (progressData?.length) {
+        const dbDone = progressData.map(p => p.unit_id)
+        const merged = [...new Set([...completed, ...dbDone])]
+        setCompleted(merged)
+        localStorage.setItem('q_done_' + subjectId, JSON.stringify(merged))
+      }
+    }
     setLoading(false)
   }
 
@@ -417,9 +430,23 @@ export default function SubjectDetailPage() {
     contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const toggleDone = (id) => {
-    const next = completed.includes(id) ? completed.filter(x => x !== id) : [...completed, id]
-    setCompleted(next); localStorage.setItem('q_done_' + subjectId, JSON.stringify(next))
+  const toggleDone = async (id) => {
+    const isDone = completed.includes(id)
+    const next = isDone ? completed.filter(x => x !== id) : [...completed, id]
+    setCompleted(next)
+    localStorage.setItem('q_done_' + subjectId, JSON.stringify(next))
+    // Save to DB if logged in
+    if (user) {
+      if (!isDone) {
+        await supabase.from('unit_progress').upsert(
+          { user_id: user.id, unit_id: id, completed: true, completed_at: new Date().toISOString() },
+          { onConflict: 'user_id,unit_id' }
+        )
+      } else {
+        await supabase.from('unit_progress').update({ completed: false })
+          .eq('user_id', user.id).eq('unit_id', id)
+      }
+    }
   }
   const goUnit = (unit) => {
     setActiveUnit(unit.id)
@@ -629,7 +656,8 @@ export default function SubjectDetailPage() {
               {/* Unit header */}
               <div className="card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
-                  <div className="min-w-0 flex-1">
+                  {/* Title hidden on mobile — shown in the bar above */}
+                  <div className="hidden lg:block min-w-0 flex-1">
                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{chapterTitle}</p>
                     <h2 className="font-bold text-lg text-gray-900 leading-snug">{unitTitle}</h2>
                   </div>

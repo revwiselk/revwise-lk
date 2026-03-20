@@ -283,15 +283,30 @@ export default function AdminUnits() {
             </thead>
             <tbody>
               {units.map(u=>{
-                const hasVideo=u.unit_content?.some(c=>c.video_url?.trim())
-                const hasNotes=u.unit_content?.some(c=>c.note_content?.trim()&&c.status==='published')
+                // Per-language completion
+                const LANG_SHORT = {english:'EN',sinhala:'SI',tamil:'TA'}
+                const langs3 = ['english','sinhala','tamil']
+                const videoLangs = langs3.filter(l=>u.unit_content?.find(c=>c.language===l)?.video_url?.trim())
+                const notesLangs = langs3.filter(l=>{const c=u.unit_content?.find(x=>x.language===l);return c?.note_content?.trim()&&c?.status==='published'})
                 const hasQuiz=u.quizzes&&(Array.isArray(u.quizzes)?u.quizzes.some(q=>q.is_active):u.quizzes?.is_active)
+                const allVideoOk = videoLangs.length===3
+                const allNotesOk = notesLangs.length===3
                 return(
                   <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-3"><div className="w-7 h-7 rounded-lg bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center">{u.order_index}</div></td>
-                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[180px] truncate">{u.title}</td>
-                    <td className="px-4 py-3"><Badge color={hasVideo?'blue':'gray'}>{hasVideo?'✓':'–'}</Badge></td>
-                    <td className="px-4 py-3"><Badge color={hasNotes?'green':'gray'}>{hasNotes?'✓':'–'}</Badge></td>
+                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[160px]">
+                      <p className="truncate">{u.title}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-0.5">
+                        {langs3.map(l=><span key={l} title={l} className={clsx('text-xs px-1 py-0.5 rounded font-bold',videoLangs.includes(l)?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-400')}>{LANG_SHORT[l]}</span>)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-0.5">
+                        {langs3.map(l=><span key={l} title={l} className={clsx('text-xs px-1 py-0.5 rounded font-bold',notesLangs.includes(l)?'bg-green-100 text-green-700':'bg-gray-100 text-gray-400')}>{LANG_SHORT[l]}</span>)}
+                      </div>
+                    </td>
                     <td className="px-4 py-3"><FCCount unitId={u.id}/></td>
                     <td className="px-4 py-3"><Badge color={hasQuiz?'cyan':'gray'}>{hasQuiz?'✓':'–'}</Badge></td>
                     <td className="px-4 py-3"><Badge color={u.is_active?'green':'gray'}>{u.is_active?'Active':'Hidden'}</Badge></td>

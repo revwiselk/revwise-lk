@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { BookOpen, Layers, HelpCircle, Users, TrendingUp, MessageSquare, ChevronRight, Award, Clock, BarChart2 } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -22,7 +22,7 @@ export default function AdminDashboard() {
       supabaseAdmin.from('quiz_attempts').select('id', { count:'exact', head:true }).eq('passed', true),
       supabaseAdmin.from('student_profiles').select('id, full_name, grade, school_name, created_at').order('created_at', { ascending:false }).limit(5),
       supabaseAdmin.from('quiz_attempts')
-        .select('id, score, max_score, passed, submitted_at, student_id, quizzes(units(title))')
+        .select('id, score, max_score, passed, submitted_at, student_id, student_profiles!quiz_attempts_student_id_fkey(full_name, grade), quizzes!quiz_attempts_quiz_id_fkey(units!quizzes_unit_id_fkey(title))')
         .not('submitted_at','is',null).order('submitted_at', { ascending:false }).limit(5),
     ]).then(([s, ch, u, q, st, att, fb, passed, recSt, recAtt]) => {
       setStats({
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
     <div>
       <div className="mb-8">
         <h1 className="font-bold text-2xl text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">RevWise.lk - Content & Student Management</p>
+        <p className="text-gray-500 text-sm mt-1">RevWise.lk — Content & Student Management</p>
       </div>
 
       {/* Stats grid */}
@@ -110,8 +110,8 @@ export default function AdminDashboard() {
               {recentAttempts.map(a => (
                 <div key={a.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{a.student_profiles?.full_name || 'Anonymous'}</p>
-                    <p className="text-xs text-gray-400 truncate max-w-[180px]">{a.quizzes?.units?.title || 'Quiz'}</p>
+                    <p className="text-sm font-medium text-gray-800">{a.student_profiles?.full_name || 'Guest'}</p>
+                    <p className="text-xs text-gray-400 truncate max-w-[180px]">{a.quizzes?.units?.title || 'Unknown Unit'}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="font-bold text-sm">{a.score}/{a.max_score}</span>

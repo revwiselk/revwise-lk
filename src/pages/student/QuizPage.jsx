@@ -190,25 +190,41 @@ export default function QuizPage() {
               <p className="font-medium text-gray-800">Thank you for your feedback! 🙏</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {/* Star rating */}
+            <div className="space-y-4">
+              {/* Category selection */}
               <div>
-                <p className="text-sm text-gray-600 mb-2">How was this quiz?</p>
-                <div className="flex gap-2">
-                  {[1,2,3,4,5].map(star => (
-                    <button key={star} onClick={() => setFeedback(f => ({ ...f, rating: star }))}
-                      className={clsx('text-2xl transition-transform hover:scale-110', feedback.rating >= star ? 'text-amber-400' : 'text-gray-300')}>
-                      ★
+                <p className="text-sm font-medium text-gray-700 mb-2">What is your feedback about?</p>
+                <div className="flex flex-wrap gap-2">
+                  {['Quiz difficulty','Question quality','Explanation clarity','Content accuracy','Technical issue','General feedback'].map(cat => (
+                    <button key={cat} type="button" onClick={() => setFeedback(f => ({ ...f, category: cat }))}
+                      className={clsx('px-3 py-1.5 rounded-xl text-xs font-medium border-2 transition-all',
+                        feedback.category === cat
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50')}>
+                      {cat}
                     </button>
                   ))}
                 </div>
               </div>
+              {/* Star rating */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Rate this quiz</p>
+                <div className="flex gap-2">
+                  {[1,2,3,4,5].map(star => (
+                    <button key={star} type="button" onClick={() => setFeedback(f => ({ ...f, rating: star }))}
+                      className={clsx('text-3xl transition-all hover:scale-110', feedback.rating >= star ? 'text-amber-400' : 'text-gray-200')}>
+                      ★
+                    </button>
+                  ))}
+                  {feedback.rating > 0 && <span className="text-xs text-gray-400 self-end pb-1 ml-1">{['','Poor','Fair','Good','Great','Excellent'][feedback.rating]}</span>}
+                </div>
+              </div>
               <Field label="Your name (optional)" placeholder="Kasun Perera"
                 value={feedback.name} onChange={e => setFeedback(f => ({ ...f, name: e.target.value }))}/>
-              <Txt label="Comments or suggestions" placeholder="Tell us what you thought of this quiz…"
+              <Txt label="Comments *" placeholder="Tell us what you thought about this quiz…"
                 value={feedback.body} onChange={e => setFeedback(f => ({ ...f, body: e.target.value }))}
                 className="min-h-[80px]"/>
-              <Btn variant="blue" onClick={handleFeedback} disabled={!feedback.body.trim()} className="gap-2">
+              <Btn variant="blue" onClick={handleFeedback} disabled={!feedback.body.trim()} className="w-full justify-center gap-2">
                 <Send size={15}/> Send Feedback
               </Btn>
             </div>
