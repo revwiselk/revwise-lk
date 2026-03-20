@@ -247,7 +247,9 @@ function FlashcardDeck({ unitId, language, onComplete }) {
     </div>
   )
 
+  // Use cursor position within the remaining (non-known) cards
   const remaining = cards.filter((_, i) => !known.includes(i))
+
   if (!remaining.length) return (
     <div className="flex flex-col items-center justify-center py-10 bg-green-50 rounded-2xl border-2 border-green-200 text-center">
       <div className="text-5xl mb-3">🎉</div>
@@ -259,14 +261,36 @@ function FlashcardDeck({ unitId, language, onComplete }) {
     </div>
   )
 
-  const card = remaining[idx % remaining.length]; const origIdx = cards.indexOf(card)
+  // clamp idx to valid range within remaining
+  const cursorIdx = idx >= remaining.length ? 0 : idx
+  const card = remaining[cursorIdx]
+  const origIdx = cards.indexOf(card)
   const progress = Math.round((known.length / cards.length) * 100)
+
+  const goNext = () => {
+    // Move to next in remaining, wrap to 0 at end
+    const nextIdx = cursorIdx + 1 >= remaining.length ? 0 : cursorIdx + 1
+    setIdx(nextIdx)
+    setFlipped(false)
+    setHint(false)
+  }
+
+  const markKnown = () => {
+    setKnown(k => [...k, origIdx])
+    // After removing this card, idx might be out of range — reset to 0 if needed
+    const newRemaining = remaining.filter((_, i) => i !== cursorIdx)
+    if (newRemaining.length === 0) return // all done, handled above
+    const nextCursor = cursorIdx >= newRemaining.length ? 0 : cursorIdx
+    setIdx(nextCursor)
+    setFlipped(false)
+    setHint(false)
+  }
 
   return (
     <div className="max-w-lg mx-auto">
       <div className="flex justify-between text-xs text-gray-500 mb-2">
-        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-green-500" />{known.length}/{cards.length}</span>
-        <span>{remaining.length} left</span>
+        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-green-500" />{known.length}/{cards.length} known</span>
+        <span>{remaining.length} remaining</span>
       </div>
       <div className="h-2 bg-gray-200 rounded-full mb-5 overflow-hidden">
         <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: progress + '%' }} />
@@ -290,10 +314,8 @@ function FlashcardDeck({ unitId, language, onComplete }) {
         )}
       </div>
       <div className="flex gap-3 mt-4">
-        <button onClick={() => { setKnown(k => [...k, origIdx]); setIdx(i => i + 1); setFlipped(false); setHint(false) }}
-          className="btn-lg btn-green flex-1 gap-2"><CheckCircle2 size={18} /> Got it!</button>
-        <button onClick={() => { setIdx(i => i + 1); setFlipped(false); setHint(false) }}
-          className="btn-lg btn-white flex-1 gap-2"><ChevronRight size={18} /> Skip</button>
+        <button onClick={markKnown} className="btn-lg btn-green flex-1 gap-2"><CheckCircle2 size={18} /> Got it!</button>
+        <button onClick={goNext} className="btn-lg btn-white flex-1 gap-2"><ChevronRight size={18} /> Skip</button>
       </div>
     </div>
   )
@@ -689,18 +711,7 @@ export default function SubjectDetailPage() {
                   ))}
                 </div>
 
-                {/* Progress bar — starts 0%, fills as each tab completes */}
-                <div className="mt-2.5">
-                  <div className="flex justify-between items-center text-xs mb-1">
-                    <span className="text-gray-400">{tabsCompleted.length}/{TABS.length} completed</span>
-                    <span className={clsx('font-bold', tabProgressPct === 100 ? 'text-green-600' : 'text-blue-600')}>{tabProgressPct}%</span>
-                  </div>
-                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div className={clsx('h-full rounded-full transition-all duration-700',
-                      tabProgressPct === 100 ? 'bg-green-500' : 'bg-blue-500')}
-                      style={{ width: tabProgressPct + '%' }} />
-                  </div>
-                </div>
+
               </div>
 
               {/* Video */}
