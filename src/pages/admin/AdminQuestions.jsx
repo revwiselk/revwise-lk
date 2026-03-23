@@ -219,30 +219,54 @@ export default function AdminQuestions() {
     }
 
     // Options — delete and recreate
-    await supabaseAdmin.from('answer_options').delete().eq('question_id', questionId)
+    const { error: delErr } = await supabaseAdmin
+      .from('answer_options')
+      .delete()
+      .eq('question_id', questionId)
+
+    if (delErr) throw new Error('Delete options failed: ' + delErr.message)
+
     for (const opt of f.options) {
-      const { data: newOpt } = await supabaseAdmin.from('answer_options')
-        .insert({ question_id: questionId, is_correct: opt.is_correct, order_index: opt.order_index, image_url: opt.image_url || null })
-        .select().single()
+      const { data: newOpt, error: optErr } = await supabaseAdmin
+        .from('answer_options')
+        .insert({ 
+          question_id: questionId, 
+          is_correct: opt.is_correct, 
+          order_index: opt.order_index,
+          image_url: opt.image_url || null 
+        })
+        .select()
+        .single()
+
+      if (optErr) throw new Error('Insert option failed: ' + optErr.message)
+
       if (newOpt) {
         const rows = LANGS.filter(l => opt.translations[l]?.trim()).map(l => ({
           answer_option_id: newOpt.id, language: l, option_text: opt.translations[l].trim(),
         }))
-        if (rows.length) await supabaseAdmin.from('answer_option_translations').insert(rows)
+        if (rows.length) {
+          const { error: transErr } = await supabaseAdmin
+            .from('answer_option_translations')
+            .insert(rows)
+          if (transErr) throw new Error('Insert option translations failed: ' + transErr.message)
+        }
       }
     }
-    return questionId
   }
 
-  const handleSave = async () => {
+    const handleSave = async () => {
     setSaving(true)
     try {
       await saveQuestion(form, editing?.id)
       toast.success(editing ? 'Question updated' : 'Question created')
-      setModalOpen(false); fetchData()
-    } catch (e) { toast.error(e.message) }
+      setModalOpen(false)
+      fetchData()
+    } catch (e) { 
+      console.error('saveQuestion error:', e) // ✅ add this
+      toast.error(e.message) 
+    }
     setSaving(false)
-  }
+    } 
 
   const handleDelete = async (id) => {
     await supabaseAdmin.from('questions').delete().eq('id', id)
