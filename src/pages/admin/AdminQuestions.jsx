@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabaseAdmin, supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { Btn, Field, Sel, Txt, Modal, Badge, PageHead, EmptyState } from '@/components/ui'
 import { Plus, Edit2, Trash2, ArrowLeft, HelpCircle, CheckCircle2, Upload, Download, AlertCircle, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -175,7 +175,6 @@ export default function AdminQuestions() {
     ;(q.question_translations || []).forEach(t => { trans[t.language] = { text: t.question_text||'', explanation: t.explanation||'' } })
     const options = [...(q.answer_options || [])].sort((a,b) => a.order_index - b.order_index).map(o => ({
       id: o.id, _id: o.id, order_index: o.order_index, is_correct: o.is_correct,
-      image_url: o.image_url || '',
       translations: { english:'', sinhala:'', tamil:'' },
     }))
     ;(q.answer_options || []).forEach(o => {
@@ -219,54 +218,30 @@ export default function AdminQuestions() {
     }
 
     // Options — delete and recreate
-    const { error: delErr } = await supabaseAdmin
-      .from('answer_options')
-      .delete()
-      .eq('question_id', questionId)
-
-    if (delErr) throw new Error('Delete options failed: ' + delErr.message)
-
+    await supabaseAdmin.from('answer_options').delete().eq('question_id', questionId)
     for (const opt of f.options) {
-      const { data: newOpt, error: optErr } = await supabaseAdmin
-        .from('answer_options')
-        .insert({ 
-          question_id: questionId, 
-          is_correct: opt.is_correct, 
-          order_index: opt.order_index,
-          image_url: opt.image_url || null 
-        })
-        .select()
-        .single()
-
-      if (optErr) throw new Error('Insert option failed: ' + optErr.message)
-
+      const { data: newOpt } = await supabaseAdmin.from('answer_options')
+        .insert({ question_id: questionId, is_correct: opt.is_correct, order_index: opt.order_index })
+        .select().single()
       if (newOpt) {
         const rows = LANGS.filter(l => opt.translations[l]?.trim()).map(l => ({
           answer_option_id: newOpt.id, language: l, option_text: opt.translations[l].trim(),
         }))
-        if (rows.length) {
-          const { error: transErr } = await supabaseAdmin
-            .from('answer_option_translations')
-            .insert(rows)
-          if (transErr) throw new Error('Insert option translations failed: ' + transErr.message)
-        }
+        if (rows.length) await supabaseAdmin.from('answer_option_translations').insert(rows)
       }
     }
+    return questionId
   }
 
-    const handleSave = async () => {
+  const handleSave = async () => {
     setSaving(true)
     try {
       await saveQuestion(form, editing?.id)
       toast.success(editing ? 'Question updated' : 'Question created')
-      setModalOpen(false)
-      fetchData()
-    } catch (e) { 
-      console.error('saveQuestion error:', e) // ✅ add this
-      toast.error(e.message) 
-    }
+      setModalOpen(false); fetchData()
+    } catch (e) { toast.error(e.message) }
     setSaving(false)
-    } 
+  }
 
   const handleDelete = async (id) => {
     await supabaseAdmin.from('questions').delete().eq('id', id)
@@ -546,16 +521,6 @@ export default function AdminQuestions() {
                           onChange={e => setOptTrans(opt._id, lang, e.target.value)}/>
                     ))}
                   </div>
-                  <Field label="Option Image URL (optional)" placeholder="https://..."
-                      value={opt.image_url||''}
-                      onChange={e => setForm(f => ({ ...f, options: f.options.map(o =>
-                        o._id === opt._id ? { ...o, image_url: e.target.value } : o
-                      )}))}/>
-                    {opt.image_url?.trim() && (
-                      <img src={opt.image_url} alt="option preview"
-                        className="h-16 rounded-lg border border-gray-200 object-cover"
-                        onError={e => e.target.style.display='none'}/>
-                    )}
                 </div>
                 </div>
               ))}
