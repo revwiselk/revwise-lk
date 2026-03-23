@@ -175,6 +175,7 @@ export default function AdminQuestions() {
     ;(q.question_translations || []).forEach(t => { trans[t.language] = { text: t.question_text||'', explanation: t.explanation||'' } })
     const options = [...(q.answer_options || [])].sort((a,b) => a.order_index - b.order_index).map(o => ({
       id: o.id, _id: o.id, order_index: o.order_index, is_correct: o.is_correct,
+      image_url: o.image_url || '',
       translations: { english:'', sinhala:'', tamil:'' },
     }))
     ;(q.answer_options || []).forEach(o => {
@@ -221,7 +222,7 @@ export default function AdminQuestions() {
     await supabaseAdmin.from('answer_options').delete().eq('question_id', questionId)
     for (const opt of f.options) {
       const { data: newOpt } = await supabaseAdmin.from('answer_options')
-        .insert({ question_id: questionId, is_correct: opt.is_correct, order_index: opt.order_index })
+        .insert({ question_id: questionId, is_correct: opt.is_correct, order_index: opt.order_index, image_url: opt.image_url || null })
         .select().single()
       if (newOpt) {
         const rows = LANGS.filter(l => opt.translations[l]?.trim()).map(l => ({
@@ -521,6 +522,16 @@ export default function AdminQuestions() {
                           onChange={e => setOptTrans(opt._id, lang, e.target.value)}/>
                     ))}
                   </div>
+                  <Field label="Option Image URL (optional)" placeholder="https://..."
+                      value={opt.image_url||''}
+                      onChange={e => setForm(f => ({ ...f, options: f.options.map(o =>
+                        o._id === opt._id ? { ...o, image_url: e.target.value } : o
+                      )}))}/>
+                    {opt.image_url?.trim() && (
+                      <img src={opt.image_url} alt="option preview"
+                        className="h-16 rounded-lg border border-gray-200 object-cover"
+                        onError={e => e.target.style.display='none'}/>
+                    )}
                 </div>
                 </div>
               ))}
