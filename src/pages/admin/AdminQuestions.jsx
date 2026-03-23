@@ -13,7 +13,7 @@ const STATUS_OPTS = ['draft','published','archived']
 
 const emptyOpt = (i) => ({
   _id: Math.random().toString(36).slice(2),
-  order_index: i, is_correct: false, image_url: '',
+  order_index: i, is_correct: false,
   translations: { english:'', sinhala:'', tamil:'' },
 })
 
@@ -368,7 +368,7 @@ export default function AdminQuestions() {
         <ArrowLeft size={16}/> Back to Units
       </button>
 
-      <PageHead
+      <PageHeader
         crumb={`${unit?.chapters?.subjects?.name} › ${unit?.chapters?.title} › ${unit?.title}`}
         title="Quiz Questions"
         sub={`${questions.length} questions · Pass mark: ${quiz?.pass_mark_percent || 50}%`}
@@ -448,18 +448,8 @@ export default function AdminQuestions() {
               </Sel>
             </div>
           </div>
-          <div>
-            <Field label="Question Image URL (optional)" placeholder="https://..." value={form.image_url}
-              onChange={e => setForm(f => ({ ...f, image_url:e.target.value }))}/>
-            {form.image_url?.trim() && (
-              <div className="mt-2 relative inline-block">
-                <img src={form.image_url} alt="preview" className="h-24 rounded-xl border border-gray-200 object-cover" onError={e=>e.target.style.display='none'}/>
-                <button onClick={()=>setForm(f=>({...f,image_url:''}))} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
-                  <X size={11}/>
-                </button>
-              </div>
-            )}
-          </div>
+          <Field label="Image URL (optional)" placeholder="https://..." value={form.image_url}
+            onChange={e => setForm(f => ({ ...f, image_url:e.target.value }))}/>
 
           {/* Language tabs */}
           <div>
@@ -512,16 +502,14 @@ export default function AdminQuestions() {
                       </button>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
-                      {LANGS.map(lang => (
-                        <Field key={lang} label={lang==='english'?'EN *':lang==='sinhala'?'SI':'TA'}
-                          placeholder={`Option in ${lang}`}
-                          value={opt.translations[lang]||''}
-                          onChange={e => setOptTrans(opt._id, lang, e.target.value)}/>
+                  <div className="grid grid-cols-3 gap-2">
+                    {LANGS.map(lang => (
+                      <Field key={lang} label={lang==='english'?'EN *':lang==='sinhala'?'SI':'TA'}
+                        placeholder={`Option in ${lang}`}
+                        value={opt.translations[lang]||''}
+                        onChange={e => setOptTrans(opt._id, lang, e.target.value)}/>
                     ))}
                   </div>
-                </div>
                 </div>
               ))}
             </div>
