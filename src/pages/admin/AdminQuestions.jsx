@@ -399,7 +399,7 @@ export default function AdminQuestions() {
       )}
 
       {loading ? (
-        <div className="space-y-3">{Array(3).fill(0).map((_,i) => <div className="card" key={i} className="p-4 h-20 skeleton"/>)}</div>
+        <div className="space-y-3">{Array(3).fill(0).map((_,i) => <div key={i} className="card p-4 h-20 skeleton"/>)}</div>
       ) : questions.length === 0 ? (
         <EmptyState icon={HelpCircle} title="No questions" description="Add questions manually or import from Excel."/>
       ) : (
@@ -408,7 +408,7 @@ export default function AdminQuestions() {
             const correct = q.answer_options?.find(o => o.is_correct)
             const correctText = correct?.answer_option_translations?.find(t => t.language==='english')?.option_text || '—'
             return (
-              <div className="card" key={q.id} className="p-5 animate-fade-up" style={{ animationDelay:`${i*0.04}s` }}>
+              <div key={q.id} className="card p-5 animate-fade-up" style={{ animationDelay:`${i*0.04}s` }}>
                 <div className="flex items-start gap-4">
                   <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm shrink-0">{i+1}</div>
                   <div className="flex-1 min-w-0">
@@ -521,6 +521,7 @@ export default function AdminQuestions() {
                           onChange={e => setOptTrans(opt._id, lang, e.target.value)}/>
                     ))}
                   </div>
+                </div>
                 </div>
               ))}
             </div>
