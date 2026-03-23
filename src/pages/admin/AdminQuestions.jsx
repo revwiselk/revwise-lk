@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, supabase } from '@/lib/supabase'
 import { Btn, Field, Sel, Txt, Modal, Badge, PageHead, EmptyState } from '@/components/ui'
 import { Plus, Edit2, Trash2, ArrowLeft, HelpCircle, CheckCircle2, Upload, Download, AlertCircle, X } from 'lucide-react'
 import toast from 'react-hot-toast'
