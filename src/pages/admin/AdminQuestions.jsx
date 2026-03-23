@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabaseAdmin } from '@/lib/supabase'
-import { Btn, Field, Sel, Txt, Modal, Badge, PageHeader, EmptyState } from '@/components/ui'
+import { supabaseAdmin, supabase } from '@/lib/supabase'
+import { Btn, Field, Sel, Txt, Modal, Badge, PageHead, EmptyState } from '@/components/ui'
 import { Plus, Edit2, Trash2, ArrowLeft, HelpCircle, CheckCircle2, Upload, Download, AlertCircle, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -368,7 +368,7 @@ export default function AdminQuestions() {
         <ArrowLeft size={16}/> Back to Units
       </button>
 
-      <PageHeader
+      <PageHead
         crumb={`${unit?.chapters?.subjects?.name} › ${unit?.chapters?.title} › ${unit?.title}`}
         title="Quiz Questions"
         sub={`${questions.length} questions · Pass mark: ${quiz?.pass_mark_percent || 50}%`}
