@@ -118,7 +118,7 @@ export default function AdminUnits() {
     const [cRes,uRes] = await Promise.all([
       supabaseAdmin.from('chapters').select('id,title,order_index,subjects(id,name,grade)').eq('id',chapterId).single(),
       supabaseAdmin.from('units')
-        .select('id,order_index,title,is_active,unit_content(language,note_content,video_url,status),quizzes!quizzes_unit_id_fkey(id,is_active),unit_translations(language,title)')
+        .select('id,order_index,title,is_active,unit_content(language,note_content,video_url,status),quizzes!quizzes_unit_id_fkey(id,is_active,questions(id,status)),unit_translations(language,title)')
         .eq('chapter_id',chapterId).order('order_index'),
     ])
     if(cRes.data) setChapter(cRes.data)
@@ -288,7 +288,10 @@ export default function AdminUnits() {
                 const langs3 = ['english','sinhala','tamil']
                 const videoLangs = langs3.filter(l=>u.unit_content?.find(c=>c.language===l)?.video_url?.trim())
                 const notesLangs = langs3.filter(l=>{const c=u.unit_content?.find(x=>x.language===l);return c?.note_content?.trim()&&c?.status==='published'})
-                const hasQuiz=u.quizzes&&(Array.isArray(u.quizzes)?u.quizzes.some(q=>q.is_active):u.quizzes?.is_active)
+                const quizActive=u.quizzes&&(Array.isArray(u.quizzes)?u.quizzes.some(q=>q.is_active):u.quizzes?.is_active)
+                // Count published questions via separate query — use quizId from quizzes
+                const quizId=u.quizzes&&(Array.isArray(u.quizzes)?u.quizzes.find(q=>q.is_active)?.id:u.quizzes?.id)
+                const hasQuiz=quizActive&&u.quizzes&&(Array.isArray(u.quizzes)?u.quizzes.some(q=>q.is_active&&(q.questions_count||0)>0):((u.quizzes?.questions_count||0)>0))
                 const allVideoOk = videoLangs.length===3
                 const allNotesOk = notesLangs.length===3
                 return(
@@ -308,7 +311,11 @@ export default function AdminUnits() {
                       </div>
                     </td>
                     <td className="px-4 py-3"><FCCount unitId={u.id}/></td>
-                    <td className="px-4 py-3"><Badge color={hasQuiz?'cyan':'gray'}>{hasQuiz?'✓':'–'}</Badge></td>
+                    <td className="px-4 py-3">{(() => {
+                      const qz = Array.isArray(u.quizzes) ? u.quizzes.find(q=>q.is_active) : u.quizzes
+                      const qCount = qz?.questions?.filter(q=>q.status==='published').length || 0
+                      return <Badge color={qCount>0?'cyan':'gray'}>{qCount>0?qCount:'–'}</Badge>
+                    })()}</td>
                     <td className="px-4 py-3"><Badge color={u.is_active?'green':'gray'}>{u.is_active?'Active':'Hidden'}</Badge></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
@@ -481,8 +488,23 @@ export default function AdminUnits() {
 }
 
 function FCCount({unitId}){
-  const [n,setN]=useState(null)
-  useEffect(()=>{ supabaseAdmin.from('flashcards').select('id',{count:'exact',head:true}).eq('unit_id',unitId).eq('language','english').then(({count:c})=>setN(c||0)) },[unitId])
-  if(n===null) return <span className="bdg-gray text-xs">…</span>
-  return <Badge color={n>0?'amber':'gray'}>{n>0?n:'–'}</Badge>
+  const [counts,setCounts]=useState(null)
+  useEffect(()=>{
+    Promise.all([
+      supabaseAdmin.from('flashcards').select('id',{count:'exact',head:true}).eq('unit_id',unitId).eq('language','english'),
+      supabaseAdmin.from('flashcards').select('id',{count:'exact',head:true}).eq('unit_id',unitId).eq('language','sinhala'),
+      supabaseAdmin.from('flashcards').select('id',{count:'exact',head:true}).eq('unit_id',unitId).eq('language','tamil'),
+    ]).then(([en,si,ta])=>setCounts({english:en.count||0,sinhala:si.count||0,tamil:ta.count||0}))
+  },[unitId])
+  if(!counts) return <span className="text-xs text-gray-300">…</span>
+  const LANG_SHORT={english:'EN',sinhala:'SI',tamil:'TA'}
+  return(
+    <div className="flex gap-0.5">
+      {['english','sinhala','tamil'].map(l=>(
+        <span key={l} className={"text-xs px-1 py-0.5 rounded font-bold "+(counts[l]>0?'bg-amber-100 text-amber-700':'bg-gray-100 text-gray-400')}>
+          {LANG_SHORT[l]}
+        </span>
+      ))}
+    </div>
+  )
 }

@@ -677,11 +677,11 @@ export default function SubjectDetailPage() {
             <div className="space-y-3">{Array(4).fill(0).map((_, i) => <div key={i} className="skeleton h-20" />)}</div>
           ) : (
             <div className="space-y-3">
-              {/* Unit header */}
-              <div className="card p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
-                  {/* Title hidden on mobile — shown in the bar above */}
-                  <div className="hidden lg:block min-w-0 flex-1">
+              {/* Unit header — compact for mobile */}
+              <div className="card p-3 sm:p-4">
+                {/* Desktop: show title + mark done */}
+                <div className="hidden lg:flex items-start justify-between gap-2 mb-3">
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{chapterTitle}</p>
                     <h2 className="font-bold text-lg text-gray-900 leading-snug">{unitTitle}</h2>
                   </div>
@@ -691,29 +691,34 @@ export default function SubjectDetailPage() {
                     {completed.includes(activeUnit) ? <><CheckCircle2 size={11} /> Done</> : <><Circle size={11} /> Mark Done</>}
                   </button>
                 </div>
-
-                {/* Tabs */}
-                <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
-                  {TABS.map((t, ti) => (
-                    <button key={t.key} onClick={() => !t.disabled && setTab(t.key)} disabled={t.disabled}
-                      className={clsx(
-                        'flex-1 flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-xs font-medium transition-all',
-                        tab === t.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
-                        t.disabled && 'opacity-40 cursor-not-allowed'
-                      )}>
-                      <div className={clsx('w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
-                        tabsCompleted.includes(t.key) ? 'bg-green-500 text-white' :
-                        tab === t.key ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600')}>
-                        {tabsCompleted.includes(t.key) ? '✓' : ti + 1}
-                      </div>
-                      <t.icon size={13} className="shrink-0" />
-                      <span className="hidden sm:inline truncate">{t.label}</span>
-                      {t.badge > 0 && <span className="bdg-blue text-xs hidden sm:inline">{t.badge}</span>}
-                    </button>
-                  ))}
+                {/* Tabs row — on mobile, mark-done is a compact icon button beside tabs */}
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-1 gap-0.5 sm:gap-1 bg-gray-100 p-1 rounded-2xl min-w-0">
+                    {TABS.map((t, ti) => (
+                      <button key={t.key} onClick={() => !t.disabled && setTab(t.key)} disabled={t.disabled}
+                        className={clsx(
+                          'flex-1 flex items-center justify-center gap-0.5 sm:gap-1 py-2 rounded-xl text-xs font-medium transition-all min-w-0',
+                          tab === t.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
+                          t.disabled && 'opacity-40 cursor-not-allowed'
+                        )}>
+                        <div className={clsx('w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
+                          tabsCompleted.includes(t.key) ? 'bg-green-500 text-white' :
+                          tab === t.key ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600')}>
+                          {tabsCompleted.includes(t.key) ? '✓' : ti + 1}
+                        </div>
+                        <t.icon size={12} className="shrink-0" />
+                        <span className="hidden sm:inline truncate text-xs">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {/* Mobile mark-done: icon-only button */}
+                  <button onClick={() => toggleDone(activeUnit)}
+                    className={clsx('lg:hidden flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all',
+                      completed.includes(activeUnit) ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}
+                    title={completed.includes(activeUnit) ? 'Done!' : 'Mark as done'}>
+                    <CheckCircle2 size={17}/>
+                  </button>
                 </div>
-
-
               </div>
 
               {/* Video */}

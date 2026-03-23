@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { Btn, Field, Sel, Txt, Modal, Badge, PageHead, EmptyState } from '@/components/ui'
 import { Plus, Edit2, Trash2, ArrowLeft, HelpCircle, CheckCircle2, Upload, Download, AlertCircle, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -13,7 +13,7 @@ const STATUS_OPTS = ['draft','published','archived']
 
 const emptyOpt = (i) => ({
   _id: Math.random().toString(36).slice(2),
-  order_index: i, is_correct: false,
+  order_index: i, is_correct: false, image_url: '',
   translations: { english:'', sinhala:'', tamil:'' },
 })
 
@@ -286,7 +286,7 @@ export default function AdminQuestions() {
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = 'RevWise_questions_template.xlsx'; a.click()
+    a.href = url; a.download = 'revwise_questions_template.xlsx'; a.click()
     URL.revokeObjectURL(url)
   }
 
@@ -368,7 +368,7 @@ export default function AdminQuestions() {
         <ArrowLeft size={16}/> Back to Units
       </button>
 
-      <PageHead
+      <PageHeader
         crumb={`${unit?.chapters?.subjects?.name} › ${unit?.chapters?.title} › ${unit?.title}`}
         title="Quiz Questions"
         sub={`${questions.length} questions · Pass mark: ${quiz?.pass_mark_percent || 50}%`}
@@ -399,7 +399,7 @@ export default function AdminQuestions() {
       )}
 
       {loading ? (
-        <div className="space-y-3">{Array(3).fill(0).map((_,i) => <div key={i} className="p-4 h-16 skeleton" />)}</div>
+        <div className="space-y-3">{Array(3).fill(0).map((_,i) => <div className="card" key={i} className="p-4 h-20 skeleton"/>)}</div>
       ) : questions.length === 0 ? (
         <EmptyState icon={HelpCircle} title="No questions" description="Add questions manually or import from Excel."/>
       ) : (
@@ -408,7 +408,7 @@ export default function AdminQuestions() {
             const correct = q.answer_options?.find(o => o.is_correct)
             const correctText = correct?.answer_option_translations?.find(t => t.language==='english')?.option_text || '—'
             return (
-              <div key={q.id} className="card p-5 animate-fade-up" style={{ animationDelay: `${i * 0.04}s` }}>
+              <div className="card" key={q.id} className="p-5 animate-fade-up" style={{ animationDelay:`${i*0.04}s` }}>
                 <div className="flex items-start gap-4">
                   <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm shrink-0">{i+1}</div>
                   <div className="flex-1 min-w-0">
@@ -448,8 +448,18 @@ export default function AdminQuestions() {
               </Sel>
             </div>
           </div>
-          <Field label="Image URL (optional)" placeholder="https://..." value={form.image_url}
-            onChange={e => setForm(f => ({ ...f, image_url:e.target.value }))}/>
+          <div>
+            <Field label="Question Image URL (optional)" placeholder="https://..." value={form.image_url}
+              onChange={e => setForm(f => ({ ...f, image_url:e.target.value }))}/>
+            {form.image_url?.trim() && (
+              <div className="mt-2 relative inline-block">
+                <img src={form.image_url} alt="preview" className="h-24 rounded-xl border border-gray-200 object-cover" onError={e=>e.target.style.display='none'}/>
+                <button onClick={()=>setForm(f=>({...f,image_url:''}))} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
+                  <X size={11}/>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Language tabs */}
           <div>
@@ -502,12 +512,13 @@ export default function AdminQuestions() {
                       </button>
                     )}
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {LANGS.map(lang => (
-                      <Field key={lang} label={lang==='english'?'EN *':lang==='sinhala'?'SI':'TA'}
-                        placeholder={`Option in ${lang}`}
-                        value={opt.translations[lang]||''}
-                        onChange={e => setOptTrans(opt._id, lang, e.target.value)}/>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-2">
+                      {LANGS.map(lang => (
+                        <Field key={lang} label={lang==='english'?'EN *':lang==='sinhala'?'SI':'TA'}
+                          placeholder={`Option in ${lang}`}
+                          value={opt.translations[lang]||''}
+                          onChange={e => setOptTrans(opt._id, lang, e.target.value)}/>
                     ))}
                   </div>
                 </div>

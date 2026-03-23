@@ -107,7 +107,14 @@ export default function QuizPage() {
   const fetchQuiz = async () => {
     setLoading(true)
     const [qzRes, questRes] = await Promise.all([
-      supabase.from('quizzes').select('*, units!quizzes_unit_id_fkey(id, chapter_id, chapters!units_chapter_id_fkey(subject_id))').eq('id', quizId).single(),
+      supabase.from('quizzes').select(`*,
+        units!quizzes_unit_id_fkey(
+          id, order_index, title, chapter_id,
+          chapters!units_chapter_id_fkey(
+            id, subject_id,
+            units(id, order_index, title, is_active)
+          )
+        )`).eq('id', quizId).single(),
       supabase.from('questions')
         .select(`id, question_type, order_index, marks, image_url,
           question_translations(language, question_text, explanation),
@@ -268,12 +275,32 @@ export default function QuizPage() {
           <Btn variant="white" className="gap-2 justify-center" onClick={() => { setPhase('quiz'); setAnswers({}); setIdx(0); setResult(null); startedAt.current = new Date() }}>
             <RotateCcw size={15}/> Retake
           </Btn>
-          {quiz?.unit_id && (
-            <Btn variant="blue" className="col-span-2 sm:col-span-1 gap-2 justify-center"
-              onClick={() => { const subjectId = quiz?.units?.chapters?.subject_id; if(subjectId) navigate('/subjects/' + subjectId); else navigate(-1) }}>
-              Next Unit →
-            </Btn>
-          )}
+          {quiz?.unit_id && (() => {
+            // Find next unit in the same chapter
+            const chapter = quiz?.units?.chapters
+            const allUnits = (chapter?.units || [])
+              .filter(u => u.is_active)
+              .sort((a,b) => a.order_index - b.order_index)
+            const curIdx = allUnits.findIndex(u => u.id === quiz.unit_id)
+            const nextUnit = allUnits[curIdx + 1]
+            const subjectId = chapter?.subject_id
+            if (nextUnit) {
+              return (
+                <Btn variant="blue" className="col-span-2 sm:col-span-1 gap-2 justify-center"
+                  onClick={() => navigate('/subjects/' + subjectId)}>
+                  Next Unit →
+                </Btn>
+              )
+            } else if (subjectId) {
+              return (
+                <Btn variant="blue" className="col-span-2 sm:col-span-1 gap-2 justify-center"
+                  onClick={() => navigate('/subjects/' + subjectId)}>
+                  All Units →
+                </Btn>
+              )
+            }
+            return null
+          })()}
         </div>
 
         {/* ── Answer review (collapsible) ── */}
