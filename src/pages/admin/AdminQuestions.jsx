@@ -368,7 +368,7 @@ export default function AdminQuestions() {
         <ArrowLeft size={16}/> Back to Units
       </button>
 
-      <PageHead
+      <PageHeader
         crumb={`${unit?.chapters?.subjects?.name} › ${unit?.chapters?.title} › ${unit?.title}`}
         title="Quiz Questions"
         sub={`${questions.length} questions · Pass mark: ${quiz?.pass_mark_percent || 50}%`}
