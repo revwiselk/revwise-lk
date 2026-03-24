@@ -118,7 +118,7 @@ export default function QuizPage() {
       supabase.from('questions')
         .select(`id, question_type, order_index, marks, image_url,
           question_translations(language, question_text, explanation),
-          answer_options(id, is_correct, order_index,
+          answer_options(id, is_correct, order_index, image_url,
             answer_option_translations(language, option_text))`)
         .eq('quiz_id', quizId)
         .eq('status', 'published')
@@ -418,7 +418,13 @@ export default function QuizPage() {
                     sel ? 'border-blue-600 bg-blue-600' : 'border-gray-300')}>
                     {sel && <div className="w-2 h-2 rounded-full bg-white"/>}
                   </div>
-                  <span className="text-sm leading-relaxed">{oTrans?.option_text}</span>
+                  <div className="flex-1 min-w-0">
+                    {opt.image_url && (
+                      <img src={opt.image_url} alt="" className="h-16 w-auto rounded-lg border border-gray-200 object-cover mb-1"
+                        onError={e => { e.target.style.display='none' }}/>
+                    )}
+                    <span className="text-sm leading-relaxed">{oTrans?.option_text}</span>
+                  </div>
                 </button>
               )
             })}
