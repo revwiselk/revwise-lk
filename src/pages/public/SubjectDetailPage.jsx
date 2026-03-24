@@ -768,13 +768,21 @@ export default function SubjectDetailPage() {
                       </div>
                     ))}
                   </div>
-                  {user
-                    ? <Link to={`/quiz/${quiz.id}`} onClick={() => markTabDone('quiz')} className="btn-lg btn-blue w-full justify-center gap-2">Start Quiz <ChevronRight size={18} /></Link>
-                    : <div className="text-center space-y-3">
-                      <p className="text-sm text-gray-500">Login to save your score</p>
-                      <Link to="/login" className="btn-lg btn-blue gap-2 inline-flex"><Lock size={16} /> Login</Link>
-                    </div>
-                  }
+                  <div className="text-center space-y-3">
+                    <Link
+                      to={`/quiz/${quiz.id}`}
+                      onClick={() => markTabDone('quiz')}
+                      className="btn-lg btn-blue w-full justify-center gap-2"
+                    >
+                      Start Quiz <ChevronRight size={18} />
+                    </Link>
+
+                    {!user && (
+                      <p className="text-xs text-gray-400">
+                        Login to save your score
+                      </p>
+                    )}
+                  </div>
                   {allUnits.length > 1 && (
                     <div className="flex gap-3 mt-6 pt-5 border-t border-gray-100">
                       {unitIdx > 0 && (
