@@ -23,13 +23,21 @@ import AdminQuestions    from '@/pages/admin/AdminQuestions'
 import AdminStudents     from '@/pages/admin/AdminStudents'
 import AdminFeedback     from '@/pages/admin/AdminFeedback'
 import AdminAnalytics    from '@/pages/admin/AdminAnalytics'
+import AdminPapers       from '@/pages/admin/AdminPapers'
+import AdminPaperSections from '@/pages/admin/AdminPaperSections'
+import AdminPaperQuestions from '@/pages/admin/AdminPaperQuestions'
+
+import PapersPage        from '@/pages/public/PapersPage'
+import PaperDetailPage   from '@/pages/public/PaperDetailPage'
+import PaperAttemptPage  from '@/pages/public/PaperAttemptPage'
+import PaperViewPage     from '@/pages/public/PaperViewPage'
 
 function Loader() {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-xl">R</span>
+          <span className="text-white font-bold text-xl">Q</span>
         </div>
         <div className="flex gap-1.5">
           {[0,1,2].map(i => (
@@ -62,13 +70,17 @@ export default function App() {
   if (loading) return <Loader/>
 
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter>
       <Routes>
         <Route element={<PublicLayout/>}>
           <Route path="/"                    element={<HomePage/>}/>
           <Route path="/subjects"            element={<SubjectsPage/>}/>
           <Route path="/subjects/:subjectId" element={<SubjectDetailPage/>}/>
           <Route path="/quiz/:quizId"        element={<QuizPage/>}/>
+          <Route path="/papers"                element={<PapersPage/>}/>
+          <Route path="/papers/:paperId"       element={<PaperDetailPage/>}/>
+          <Route path="/papers/:paperId/view"  element={<PaperViewPage/>}/>
+          <Route path="/papers/:paperId/attempt" element={<PaperAttemptPage/>}/>
         </Route>
 
         <Route element={<AuthGuard/>}>
@@ -89,6 +101,9 @@ export default function App() {
           <Route path="/admin/students"                     element={<AdminStudents/>}/>
           <Route path="/admin/feedback"                     element={<AdminFeedback/>}/>
           <Route path="/admin/analytics"                    element={<AdminAnalytics/>}/>
+          <Route path="/admin/papers"                           element={<AdminPapers/>}/>
+          <Route path="/admin/papers/:paperId/sections"         element={<AdminPaperSections/>}/>
+          <Route path="/admin/paper-sections/:sectionId/questions" element={<AdminPaperQuestions/>}/>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace/>}/>

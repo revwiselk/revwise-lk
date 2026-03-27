@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useLangStore } from '@/store/langStore'
-import { LogOut, LayoutDashboard, BookOpen, Shield, Home, Menu, X, ChevronDown } from 'lucide-react'
+import { LogOut, LayoutDashboard, BookOpen, Shield, Home, Menu, X, ChevronDown, FileText } from 'lucide-react'
 import clsx from 'clsx'
 
 const LANGS = [
@@ -77,6 +77,7 @@ export default function Navbar() {
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             <NavLink to="/" end className={navCls}><Home size={14}/>Home</NavLink>
             <NavLink to="/subjects" className={navCls}><BookOpen size={14}/>Subjects</NavLink>
+            <NavLink to="/papers" className={navCls}><FileText size={14}/>Papers</NavLink>
           </nav>
 
           {/* Spacer on mobile */}
@@ -130,6 +131,10 @@ export default function Navbar() {
             'flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all flex-1',
             isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
           )}><BookOpen size={14}/>Subjects</NavLink>
+          <NavLink to="/papers" className={({ isActive }) => clsx(
+            'flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all flex-1',
+            isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
+          )}><FileText size={14}/>Papers</NavLink>
           {user && role === 'student' && (
             <NavLink to="/dashboard" className={({ isActive }) => clsx(
               'flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all flex-1',

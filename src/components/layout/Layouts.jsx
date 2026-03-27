@@ -30,7 +30,7 @@ function AdminSidebar({ collapsed, onClose }) {
       {/* Logo */}
       <div className={clsx('flex items-center gap-3 px-4 py-5 border-b border-gray-100', collapsed && 'justify-center px-2')}>
         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-          <span className="text-white font-bold text-sm">R</span>
+          <span className="text-white font-bold text-sm">Q</span>
         </div>
         {!collapsed && (
           <div>
@@ -86,7 +86,7 @@ export function PublicLayout() {
       <Navbar/>
       <main className="flex-1"><Outlet/></main>
       <footer className="border-t border-gray-200 bg-white py-4 text-center">
-        <p className="text-gray-400 text-xs">© {new Date().getFullYear()} RevWise.lk - Sri Lanka Government Syllabus · Grade 6–11</p>
+        <p className="text-gray-400 text-xs">© {new Date().getFullYear()} RevWise.lk — Sri Lanka Government Syllabus · Grade 6–11</p>
       </footer>
     </div>
   )
