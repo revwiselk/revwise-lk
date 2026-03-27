@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, supabase } from '@/lib/supabase'
 import { BookOpen, Layers, HelpCircle, Users, TrendingUp, MessageSquare, ChevronRight, Award, BarChart2, FileText } from 'lucide-react'
 import clsx from 'clsx'
 
