@@ -18,7 +18,22 @@ export default function AdminDashboard() {
   const [attemptTab, setAttemptTab] = useState('quiz')
 
   useEffect(() => {
-    const safe = (p) => p.catch(() => ({ count: 0, data: [] }))
+      const safe = async (query) => {
+      try {
+        const res = await query;
+        // Catch Supabase-specific errors (it resolves successfully but attaches an error object)
+        if (res.error) {
+          console.error("Supabase Error:", res.error.message);
+          return { count: 0, data: [] };
+        }
+        return res;
+      } catch (err) {
+        // Catch standard network or JavaScript errors
+        console.error("Network/JS Error:", err);
+        return { count: 0, data: [] };
+      }
+    };
+
     Promise.all([
       safe(supabaseAdmin.from('subjects').select('id', { count:'exact', head:true })),
       safe(supabaseAdmin.from('chapters').select('id', { count:'exact', head:true })),

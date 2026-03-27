@@ -4,13 +4,14 @@ import Navbar from './Navbar'
 import { useAuthStore } from '@/store/authStore'
 import {
   LayoutDashboard, BookOpen, Users, MessageSquare,
-  LogOut, Menu, X, ChevronLeft, Shield, BarChart2
+  LogOut, Menu, X, ChevronLeft, Shield, BarChart2, FileText
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const ADMIN_NAV = [
   { to: '/admin',           icon: LayoutDashboard, label: 'Dashboard',  exact: true },
   { to: '/admin/subjects',  icon: BookOpen,        label: 'Curriculum'  },
+  { to: '/admin/papers',    icon: FileText,        label: 'Papers'      },
   { to: '/admin/students',  icon: Users,           label: 'Students'    },
   { to: '/admin/feedback',  icon: MessageSquare,   label: 'Feedback'    },
   { to: '/admin/analytics', icon: BarChart2,        label: 'Analytics'  },
@@ -30,7 +31,7 @@ function AdminSidebar({ collapsed, onClose }) {
       {/* Logo */}
       <div className={clsx('flex items-center gap-3 px-4 py-5 border-b border-gray-100', collapsed && 'justify-center px-2')}>
         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-          <span className="text-white font-bold text-sm">Q</span>
+          <span className="text-white font-bold text-sm">R</span>
         </div>
         {!collapsed && (
           <div>
