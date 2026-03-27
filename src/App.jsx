@@ -37,7 +37,7 @@ function Loader() {
     <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-xl">Q</span>
+          <span className="text-white font-bold text-xl">R</span>
         </div>
         <div className="flex gap-1.5">
           {[0,1,2].map(i => (
