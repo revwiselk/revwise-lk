@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabaseAdmin } from '@/lib/supabase'
 import { Btn, Field, Sel, Txt, Modal, Badge, PageHead, EmptyState } from '@/components/ui'
-import { Plus, Edit2, Trash2, ChevronRight, FileText, FileDown, Download } from 'lucide-react'
+import { Plus, Edit2, Trash2, ChevronRight, FileText, FileDown, Download, Video } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
@@ -14,7 +14,8 @@ const TYPE_COLORS = { past_paper:'blue', model_paper:'green', term_test:'amber',
 
 const blankForm = () => ({
   grade:'6', subject:'Science', paper_type:'past_paper', year:'', term:'',
-  title:'', description:'', duration_mins:'', total_marks:'100', is_active:true, pdf_url:''
+  title:'', description:'', duration_mins:'', total_marks:'100', is_active:true, pdf_url:'',
+  video_url_en:'', video_url_si:'', video_url_ta:''
 })
 
 export default function AdminPapers() {
@@ -44,7 +45,8 @@ export default function AdminPapers() {
   const openEdit = (p) => {
     setEditing(p)
     setForm({ grade:String(p.grade), subject:p.subject, paper_type:p.paper_type, year:p.year||'', term:p.term||'',
-      title:p.title, description:p.description||'', duration_mins:p.duration_mins||'', total_marks:p.total_marks||100, is_active:p.is_active, pdf_url:p.pdf_url||'' })
+      title:p.title, description:p.description||'', duration_mins:p.duration_mins||'', total_marks:p.total_marks||100, is_active:p.is_active, pdf_url:p.pdf_url||'',
+      video_url_en:p.video_url_en||'', video_url_si:p.video_url_si||'', video_url_ta:p.video_url_ta||'' })
     setModalOpen(true)
   }
 
@@ -60,6 +62,9 @@ export default function AdminPapers() {
       total_marks: parseInt(form.total_marks)||100,
       is_active: form.is_active,
       pdf_url: form.pdf_url?.trim() || null,
+      video_url_en: form.video_url_en?.trim() || null,
+      video_url_si: form.video_url_si?.trim() || null,
+      video_url_ta: form.video_url_ta?.trim() || null,
     }
     if (editing) {
       const {error} = await supabaseAdmin.from('papers').update(payload).eq('id', editing.id)
@@ -209,6 +214,21 @@ export default function AdminPapers() {
                 <FileDown size={11}/> Test PDF link →
               </a>
             )}
+          </div>
+          {/* Video URLs — one per language */}
+          <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+            <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-3 flex items-center gap-1">
+              <Video size={13}/> Explanation Videos (per language)
+            </p>
+            <div className="space-y-3">
+              <Field label="🇬🇧 English Video URL" placeholder="YouTube or direct video link"
+                value={form.video_url_en} onChange={e=>setForm(f=>({...f,video_url_en:e.target.value}))}/>
+              <Field label="🇱🇰 Sinhala (සිංහල) Video URL" placeholder="YouTube or direct video link"
+                value={form.video_url_si} onChange={e=>setForm(f=>({...f,video_url_si:e.target.value}))}/>
+              <Field label="🇮🇳 Tamil (தமிழ்) Video URL" placeholder="YouTube or direct video link"
+                value={form.video_url_ta} onChange={e=>setForm(f=>({...f,video_url_ta:e.target.value}))}/>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Each video will show automatically when the student switches language.</p>
           </div>
           <div className="flex gap-3 pt-2">
             <Btn variant="white" className="flex-1" onClick={()=>setModalOpen(false)}>Cancel</Btn>

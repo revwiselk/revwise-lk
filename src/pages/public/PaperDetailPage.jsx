@@ -2,26 +2,35 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
+import { useLangStore } from '@/store/langStore'
 import { Badge, Btn, Field } from '@/components/ui'
 import { ArrowLeft, Clock, FileText, Award, BookOpen, Lock, Play,
          CheckCircle2, Download, Timer, AlertCircle, ChevronRight,
-         ChevronDown, ChevronUp, Globe, Video, X } from 'lucide-react'
+         ChevronDown, ChevronUp, Video, X } from 'lucide-react'
 import clsx from 'clsx'
 
 const TYPE_LABELS = { past_paper:'Past Paper', model_paper:'Model Paper', term_test:'Term Test', mock_exam:'Mock Exam', sample:'Sample' }
 const TYPE_COLORS = { past_paper:'blue', model_paper:'green', term_test:'amber', mock_exam:'red', sample:'gray' }
 const SECTION_TYPE_LABELS = { mcq:'MCQ', short_answer:'Short Answer', essay:'Essay', structured:'Structured', fill_blank:'Fill Blank', true_false:'True/False' }
 
-const VIDEO_LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇬🇧', nativeLabel: 'English' },
-  { code: 'si', label: 'Sinhala', flag: '🇱🇰', nativeLabel: 'සිංහල' },
-  { code: 'ta', label: 'Tamil', flag: '🇮🇳', nativeLabel: 'தமிழ்' },
-]
+// Maps langStore language keys → paper db field suffixes
+const LANG_VIDEO_FIELD = {
+  english: 'video_url_en',
+  sinhala: 'video_url_si',
+  tamil:   'video_url_ta',
+}
+const LANG_LABELS = {
+  english: { flag: '🇬🇧', label: 'English' },
+  sinhala: { flag: '🇱🇰', label: 'සිංහල' },
+  tamil:   { flag: '🇮🇳', label: 'தமிழ்' },
+}
 
 export default function PaperDetailPage() {
   const { paperId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const { language } = useLangStore()   // 'english' | 'sinhala' | 'tamil'
+
   const [paper, setPaper] = useState(null)
   const [sections, setSections] = useState([])
   const [attempts, setAttempts] = useState([])
@@ -29,13 +38,13 @@ export default function PaperDetailPage() {
   const [showTimerSetup, setShowTimerSetup] = useState(false)
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [timerMins, setTimerMins] = useState('')
-  // Attempts dropdown
   const [attemptsOpen, setAttemptsOpen] = useState(false)
-  // Video modal
-  const [showVideoModal, setShowVideoModal] = useState(false)
-  const [selectedVideoLang, setSelectedVideoLang] = useState('en')
+  const [showVideo, setShowVideo] = useState(false)
 
   useEffect(() => { fetchPaper() }, [paperId])
+
+  // Close video modal whenever the language changes so the right video reloads
+  useEffect(() => { setShowVideo(false) }, [language])
 
   const fetchPaper = async () => {
     setLoading(true)
@@ -66,8 +75,7 @@ export default function PaperDetailPage() {
 
   const startPaper = () => {
     const mins = timerEnabled && parseInt(timerMins) > 0 ? parseInt(timerMins) : null
-    const url = `/papers/${paperId}/attempt` + (mins ? `?timer=${mins}` : '')
-    navigate(url)
+    navigate(`/papers/${paperId}/attempt` + (mins ? `?timer=${mins}` : ''))
   }
 
   const fmtTime = (secs) => {
@@ -76,17 +84,11 @@ export default function PaperDetailPage() {
     return m > 0 ? `${m}m ${s}s` : `${s}s`
   }
 
-  // Get video URL based on language (paper fields: video_url_en, video_url_si, video_url_ta or fallback)
-  const getVideoUrl = (lang) => {
-    if (!paper) return null
-    return paper[`video_url_${lang}`] || paper.video_url || null
-  }
-
   const handleDownload = async (e, url, title) => {
     e.preventDefault()
     try {
-      const response = await fetch(url)
-      const blob = await response.blob()
+      const res = await fetch(url)
+      const blob = await res.blob()
       const blobUrl = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = blobUrl
@@ -96,9 +98,25 @@ export default function PaperDetailPage() {
       document.body.removeChild(a)
       URL.revokeObjectURL(blobUrl)
     } catch {
-      // Fallback: open in new tab
       window.open(url, '_blank')
     }
+  }
+
+  // Get video URL for the current app language
+  const getVideoUrl = () => {
+    if (!paper) return null
+    const field = LANG_VIDEO_FIELD[language] // e.g. 'video_url_en'
+    return paper[field] || paper.video_url_en || paper.video_url || null
+  }
+
+  const hasAnyVideo = (p) =>
+    !!(p?.video_url_en || p?.video_url_si || p?.video_url_ta || p?.video_url)
+
+  const toEmbedUrl = (url) => {
+    if (!url) return null
+    if (url.includes('youtube.com/watch')) return url.replace('watch?v=', 'embed/')
+    if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/')
+    return url
   }
 
   if (loading) return (
@@ -112,12 +130,16 @@ export default function PaperDetailPage() {
     </div>
   )
 
-  const currentVideoUrl = getVideoUrl(selectedVideoLang)
-  const bestAttempt = attempts.length > 0 ? attempts.reduce((best, a) => (!best || a.score > best.score) ? a : best, null) : null
+  const videoUrl = getVideoUrl()
+  const embedUrl = toEmbedUrl(videoUrl)
+  const isYoutube = videoUrl && (videoUrl.includes('youtube') || videoUrl.includes('youtu.be'))
+  const bestAttempt = attempts.length > 0
+    ? attempts.reduce((best, a) => (!best || a.score > best.score) ? a : best, null)
+    : null
+  const langInfo = LANG_LABELS[language]
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-      {/* Breadcrumb */}
       <button onClick={() => navigate('/papers')} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 mb-5 transition-colors">
         <ArrowLeft size={14}/> Papers
       </button>
@@ -150,7 +172,7 @@ export default function PaperDetailPage() {
         </div>
       </div>
 
-      {/* Sections list */}
+      {/* Sections */}
       <div className="card overflow-hidden mb-4">
         <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
           <p className="font-semibold text-sm text-gray-700">{sections.length} Section{sections.length !== 1 ? 's' : ''}</p>
@@ -171,7 +193,7 @@ export default function PaperDetailPage() {
         ))}
       </div>
 
-      {/* ── Your Attempts — Dropdown ── */}
+      {/* Your Attempts — Dropdown */}
       {user && attempts.length > 0 && (
         <div className="card overflow-hidden mb-4">
           <button
@@ -186,10 +208,7 @@ export default function PaperDetailPage() {
                 </span>
               )}
             </div>
-            {attemptsOpen
-              ? <ChevronUp size={16} className="text-gray-400"/>
-              : <ChevronDown size={16} className="text-gray-400"/>
-            }
+            {attemptsOpen ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
           </button>
 
           {attemptsOpen && (
@@ -212,10 +231,8 @@ export default function PaperDetailPage() {
                       a.passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600')}>
                       {a.passed ? 'Passed' : 'Failed'}
                     </span>
-                    {/* Score bar */}
                     <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={clsx('h-full rounded-full', a.passed ? 'bg-green-500' : 'bg-red-400')}
+                      <div className={clsx('h-full rounded-full', a.passed ? 'bg-green-500' : 'bg-red-400')}
                         style={{ width: `${Math.min(100, Math.round((a.score / a.max_score) * 100))}%` }}/>
                     </div>
                   </div>
@@ -226,100 +243,77 @@ export default function PaperDetailPage() {
         </div>
       )}
 
-      {/* ── Explanation Video ── */}
-      {(paper.video_url || paper.video_url_en || paper.video_url_si || paper.video_url_ta) && (
+      {/* Explanation Video — follows app language */}
+      {hasAnyVideo(paper) && (
         <div className="card overflow-hidden mb-4">
-          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-            <Video size={15} className="text-purple-500"/>
-            <p className="font-semibold text-sm text-gray-700">Explanation Video</p>
-          </div>
-          <div className="p-5">
-            {/* Language selector */}
-            <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5">
-              <Globe size={12}/> Select your language:
-            </p>
-            <div className="flex gap-2 mb-4">
-              {VIDEO_LANGUAGES.map(lang => {
-                const hasVideo = !!(paper[`video_url_${lang.code}`] || (lang.code === 'en' && paper.video_url))
-                return (
-                  <button
-                    key={lang.code}
-                    onClick={() => { setSelectedVideoLang(lang.code); setShowVideoModal(true) }}
-                    disabled={!hasVideo}
-                    className={clsx(
-                      'flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all',
-                      selectedVideoLang === lang.code && showVideoModal
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300 hover:bg-purple-50',
-                      !hasVideo && 'opacity-40 cursor-not-allowed'
-                    )}>
-                    <span className="text-base">{lang.flag}</span>
-                    <span>{lang.nativeLabel}</span>
-                  </button>
-                )
-              })}
+          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Video size={15} className="text-purple-500"/>
+              <p className="font-semibold text-sm text-gray-700">Explanation Video</p>
             </div>
-            <p className="text-xs text-gray-400">Click a language to watch the explanation video</p>
+            <span className="text-xs bg-purple-100 text-purple-600 font-semibold px-2 py-0.5 rounded-lg">
+              {langInfo.flag} {langInfo.label}
+            </span>
+          </div>
+
+          <div className="p-5">
+            {videoUrl ? (
+              <>
+                <p className="text-xs text-gray-400 mb-3">
+                  Showing explanation in <strong className="text-gray-600">{langInfo.label}</strong> — change language from the top bar to switch video.
+                </p>
+                <button
+                  onClick={() => setShowVideo(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 transition-all shadow-sm">
+                  <Play size={16}/> Watch Explanation ({langInfo.flag} {langInfo.label})
+                </button>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-400">
+                  No video available in <strong>{langInfo.label}</strong> yet.
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Try switching to another language from the top bar.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Video Modal */}
-      {showVideoModal && currentVideoUrl && (
+      {showVideo && videoUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowVideoModal(false)}/>
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowVideo(false)}/>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden" style={{zIndex:51}}>
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <Video size={16} className="text-purple-500"/>
+                <Video size={15} className="text-purple-500"/>
                 <span className="font-semibold text-gray-900 text-sm">
-                  Explanation — {VIDEO_LANGUAGES.find(l => l.code === selectedVideoLang)?.nativeLabel}
+                  Explanation — {langInfo.flag} {langInfo.label}
                 </span>
               </div>
-              {/* Language switch buttons inside modal */}
-              <div className="flex items-center gap-2">
-                {VIDEO_LANGUAGES.map(lang => {
-                  const hasVideo = !!(paper[`video_url_${lang.code}`] || (lang.code === 'en' && paper.video_url))
-                  if (!hasVideo) return null
-                  return (
-                    <button key={lang.code}
-                      onClick={() => setSelectedVideoLang(lang.code)}
-                      className={clsx('text-sm px-2.5 py-1 rounded-lg border transition-all',
-                        selectedVideoLang === lang.code
-                          ? 'border-purple-500 bg-purple-50 text-purple-700 font-semibold'
-                          : 'border-gray-200 text-gray-500 hover:border-purple-300'
-                      )}>
-                      {lang.flag} {lang.nativeLabel}
-                    </button>
-                  )
-                })}
-                <button onClick={() => setShowVideoModal(false)}
-                  className="ml-1 p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
-                  <X size={16}/>
-                </button>
-              </div>
+              <button onClick={() => setShowVideo(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
+                <X size={16}/>
+              </button>
             </div>
             <div className="aspect-video bg-black">
-              {currentVideoUrl.includes('youtube.com') || currentVideoUrl.includes('youtu.be') ? (
-                <iframe
-                  src={currentVideoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
-                  className="w-full h-full"
+              {isYoutube ? (
+                <iframe src={embedUrl} className="w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen/>
               ) : (
-                <video src={currentVideoUrl} controls className="w-full h-full" autoPlay/>
+                <video src={videoUrl} controls autoPlay className="w-full h-full"/>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Action buttons ── */}
+      {/* Action buttons */}
       <div className="space-y-3">
-        {/* PDF Download */}
         {paper.pdf_url && (
-          <button
-            onClick={(e) => handleDownload(e, paper.pdf_url, paper.title)}
+          <button onClick={(e) => handleDownload(e, paper.pdf_url, paper.title)}
             className="flex items-center justify-center gap-2 w-full py-3.5 px-5 rounded-2xl border-2 border-blue-200 bg-blue-50 text-blue-700 font-semibold text-sm hover:bg-blue-100 hover:border-blue-300 transition-all group">
             <Download size={18} className="group-hover:translate-y-0.5 transition-transform"/>
             Download PDF Paper
@@ -329,8 +323,7 @@ export default function PaperDetailPage() {
         {hasMCQ ? (
           user ? (
             !showTimerSetup ? (
-              <button onClick={() => setShowTimerSetup(true)}
-                className="btn-lg btn-blue w-full justify-center gap-2">
+              <button onClick={() => setShowTimerSetup(true)} className="btn-lg btn-blue w-full justify-center gap-2">
                 <Play size={18}/> Start Paper
               </button>
             ) : (
@@ -339,49 +332,36 @@ export default function PaperDetailPage() {
                   <Timer size={18} className="text-blue-600"/>
                   <h3 className="font-bold text-gray-900">Timer Settings</h3>
                 </div>
-
                 <label className="flex items-center gap-3 mb-4 cursor-pointer">
                   <div onClick={() => setTimerEnabled(!timerEnabled)}
-                    className={clsx('w-11 h-6 rounded-full transition-all relative',
-                      timerEnabled ? 'bg-blue-600' : 'bg-gray-200')}>
-                    <div className={clsx('absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all',
-                      timerEnabled ? 'left-6' : 'left-1')}/>
+                    className={clsx('w-11 h-6 rounded-full transition-all relative', timerEnabled ? 'bg-blue-600' : 'bg-gray-200')}>
+                    <div className={clsx('absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all', timerEnabled ? 'left-6' : 'left-1')}/>
                   </div>
                   <span className="text-sm font-medium text-gray-700">Enable countdown timer</span>
                 </label>
-
                 {timerEnabled && (
                   <div className="mb-4">
                     <p className="text-xs text-gray-500 mb-2">Set time limit (minutes)</p>
                     <div className="flex items-center gap-3">
-                      <input
-                        type="number" min="1" max="300"
-                        value={timerMins}
+                      <input type="number" min="1" max="300" value={timerMins}
                         onChange={e => setTimerMins(e.target.value)}
                         placeholder={paper.duration_mins ? String(paper.duration_mins) : '60'}
                         className="inp w-28 text-center font-bold text-lg"/>
                       <span className="text-sm text-gray-500">minutes</span>
                     </div>
-                    {paper.duration_mins && (
-                      <p className="text-xs text-gray-400 mt-1">Suggested: {paper.duration_mins} min</p>
-                    )}
+                    {paper.duration_mins && <p className="text-xs text-gray-400 mt-1">Suggested: {paper.duration_mins} min</p>}
                   </div>
                 )}
-
                 {!timerEnabled && (
                   <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                      <AlertCircle size={12} className="text-gray-400"/>
-                      No time limit — you can take as long as you need
+                      <AlertCircle size={12} className="text-gray-400"/> No time limit — you can take as long as you need
                     </p>
                   </div>
                 )}
-
                 <div className="flex gap-3">
                   <button onClick={() => setShowTimerSetup(false)} className="btn-md btn-white flex-1">Cancel</button>
-                  <button onClick={startPaper} className="btn-md btn-blue flex-1 gap-2">
-                    <Play size={15}/> Begin Paper
-                  </button>
+                  <button onClick={startPaper} className="btn-md btn-blue flex-1 gap-2"><Play size={15}/> Begin Paper</button>
                 </div>
               </div>
             )
@@ -398,8 +378,7 @@ export default function PaperDetailPage() {
           </div>
         )}
 
-        <Link to={`/papers/${paperId}/view`}
-          className="btn-md btn-white w-full justify-center gap-2">
+        <Link to={`/papers/${paperId}/view`} className="btn-md btn-white w-full justify-center gap-2">
           <FileText size={15}/> View Questions
         </Link>
       </div>
