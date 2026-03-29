@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabaseAdmin, supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { Btn, Field, Sel, Txt, Modal, Badge, PageHead, EmptyState } from '@/components/ui'
-import { Plus, Edit2, Trash2, ChevronRight, FileText } from 'lucide-react'
+import { Plus, Edit2, Trash2, ChevronRight, FileText, FileDown, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
@@ -14,7 +14,7 @@ const TYPE_COLORS = { past_paper:'blue', model_paper:'green', term_test:'amber',
 
 const blankForm = () => ({
   grade:'6', subject:'Science', paper_type:'past_paper', year:'', term:'',
-  title:'', description:'', duration_mins:'', total_marks:'100', is_active:true
+  title:'', description:'', duration_mins:'', total_marks:'100', is_active:true, pdf_url:''
 })
 
 export default function AdminPapers() {
@@ -34,7 +34,7 @@ export default function AdminPapers() {
   const fetchPapers = async () => {
     setLoading(true)
     const { data } = await supabaseAdmin.from('papers')
-      .select('id, grade, subject, paper_type, year, term, title, is_active, total_marks, duration_mins, paper_sections(id)')
+      .select('id, grade, subject, paper_type, year, term, title, is_active, total_marks, duration_mins, pdf_url, paper_sections(id)')
       .order('grade').order('subject').order('year', { ascending: false })
     setPapers(data || [])
     setLoading(false)
@@ -44,7 +44,7 @@ export default function AdminPapers() {
   const openEdit = (p) => {
     setEditing(p)
     setForm({ grade:String(p.grade), subject:p.subject, paper_type:p.paper_type, year:p.year||'', term:p.term||'',
-      title:p.title, description:p.description||'', duration_mins:p.duration_mins||'', total_marks:p.total_marks||100, is_active:p.is_active })
+      title:p.title, description:p.description||'', duration_mins:p.duration_mins||'', total_marks:p.total_marks||100, is_active:p.is_active, pdf_url:p.pdf_url||'' })
     setModalOpen(true)
   }
 
@@ -59,6 +59,7 @@ export default function AdminPapers() {
       duration_mins: form.duration_mins ? parseInt(form.duration_mins) : null,
       total_marks: parseInt(form.total_marks)||100,
       is_active: form.is_active,
+      pdf_url: form.pdf_url?.trim() || null,
     }
     if (editing) {
       const {error} = await supabaseAdmin.from('papers').update(payload).eq('id', editing.id)
@@ -117,7 +118,7 @@ export default function AdminPapers() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {['Title','Grade','Type','Year','Sections','Marks','Status','Actions'].map(h=>(
+                  {['Title','Grade','Type','Year','PDF','Sections','Marks','Status','Actions'].map(h=>(
                     <th key={h} className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-4 py-3">{h}</th>
                   ))}
                 </tr>
@@ -132,6 +133,7 @@ export default function AdminPapers() {
                     <td className="px-4 py-3"><Badge color="blue">G{p.grade}</Badge></td>
                     <td className="px-4 py-3"><Badge color={TYPE_COLORS[p.paper_type]||'gray'}>{TYPE_LABELS[p.paper_type]}</Badge></td>
                     <td className="px-4 py-3 text-sm text-gray-500">{p.year||'—'}</td>
+                    <td className="px-4 py-3">{p.pdf_url ? <span className="bdg-blue text-xs">✓ PDF</span> : <span className="text-gray-300 text-xs">—</span>}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{p.paper_sections?.length||0}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{p.total_marks}</td>
                     <td className="px-4 py-3"><Badge color={p.is_active?'green':'gray'}>{p.is_active?'Active':'Hidden'}</Badge></td>
@@ -190,6 +192,24 @@ export default function AdminPapers() {
           </div>
           <Txt label="Description (optional)" placeholder="Brief description" value={form.description}
             onChange={e=>setForm(f=>({...f,description:e.target.value}))} className="min-h-[70px]"/>
+          {/* PDF section */}
+          <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3 flex items-center gap-1">
+              <FileDown size={13}/> PDF Paper (for download)
+            </p>
+            <Field label="PDF URL" placeholder="https://drive.google.com/file/d/.../view or direct .pdf link"
+              value={form.pdf_url} onChange={e=>setForm(f=>({...f,pdf_url:e.target.value}))}/>
+            <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+              Paste a <strong>direct PDF link</strong> or <strong>Google Drive share URL</strong>.<br/>
+              For Google Drive: File → Share → Copy link (set to &quot;Anyone with link&quot;).
+            </p>
+            {form.pdf_url?.trim() && (
+              <a href={form.pdf_url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:underline font-medium">
+                <FileDown size={11}/> Test PDF link →
+              </a>
+            )}
+          </div>
           <div className="flex gap-3 pt-2">
             <Btn variant="white" className="flex-1" onClick={()=>setModalOpen(false)}>Cancel</Btn>
             <Btn variant="blue" className="flex-1" loading={saving} onClick={handleSave}>
