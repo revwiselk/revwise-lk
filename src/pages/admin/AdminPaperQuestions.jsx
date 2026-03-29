@@ -17,7 +17,7 @@ const emptyQ = () => ({
   question_text:'', question_si:'', question_ta:'', image_url:'',
   marks:1, question_type:'mcq', model_answer:'', order_index:1,
   hint:'', hint_si:'', hint_ta:'',
-  explanation:'', explanation_si:'', explanation_ta:'', video_link:'',
+  explanation:'', explanation_si:'', explanation_ta:'', video_link:'', video_link_si:'', video_link_ta:'',
   options:[emptyOpt(1),emptyOpt(2),emptyOpt(3),emptyOpt(4)],
 })
 
@@ -48,7 +48,7 @@ function parseExcelRows(rows, sectionType) {
       image_url:'', model_answer:String(row.model_answer||''),
       hint:String(row.hint_en||''), hint_si:String(row.hint_si||''), hint_ta:String(row.hint_ta||''),
       explanation:String(row.explanation_en||''), explanation_si:String(row.explanation_si||''), explanation_ta:String(row.explanation_ta||''),
-      video_link:String(row.video_link||''), options:opts,
+      video_link:String(row.video_link||''), video_link_si:String(row.video_link_si||''), video_link_ta:String(row.video_link_ta||''), options:opts,
     }
   }).filter(q=>q.question_text.trim())
 }
@@ -104,7 +104,7 @@ export default function AdminPaperQuestions() {
       model_answer:q.model_answer||'',order_index:q.order_index,
       hint:q.hint||'',hint_si:q.hint_si||'',hint_ta:q.hint_ta||'',
       explanation:q.explanation||'',explanation_si:q.explanation_si||'',explanation_ta:q.explanation_ta||'',
-      video_link:q.video_link||'',options:opts,
+      video_link:q.video_link||'', video_link_si:q.video_link_si||'', video_link_ta:q.video_link_ta||'', options:opts,
     })
     setModalOpen(true)
   }
@@ -120,7 +120,7 @@ export default function AdminPaperQuestions() {
       model_answer:f.model_answer?.trim()||null,
       hint:f.hint?.trim()||null, hint_si:f.hint_si?.trim()||null, hint_ta:f.hint_ta?.trim()||null,
       explanation:f.explanation?.trim()||null, explanation_si:f.explanation_si?.trim()||null,
-      explanation_ta:f.explanation_ta?.trim()||null, video_link:f.video_link?.trim()||null,
+      explanation_ta:f.explanation_ta?.trim()||null, video_link:f.video_link?.trim()||null, video_link_si:f.video_link_si?.trim()||null, video_link_ta:f.video_link_ta?.trim()||null,
     }
     let qId2=qId
     if(qId){const{error}=await supabaseAdmin.from('paper_questions').update(payload).eq('id',qId);if(error)throw new Error(error.message)}
@@ -317,7 +317,12 @@ export default function AdminPaperQuestions() {
               <Txt label="Explanation (Sinhala)" placeholder="සිංහල පැහැදිලි කිරීම…" value={form.explanation_si} onChange={e=>setForm(f=>({...f,explanation_si:e.target.value}))} className="min-h-[50px]"/>
               <Txt label="Explanation (Tamil)" placeholder="தமிழ் விளக்கம்…" value={form.explanation_ta} onChange={e=>setForm(f=>({...f,explanation_ta:e.target.value}))} className="min-h-[50px]"/>
             </div>
-            <Field label="Video Link EN (YouTube embed URL)" placeholder="https://www.youtube.com/embed/..." value={form.video_link} onChange={e=>setForm(f=>({...f,video_link:e.target.value}))}/>
+            <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 space-y-2">
+              <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">🎬 Explanation Videos (per language)</p>
+              <Field label="🇬🇧 English Video URL" placeholder="YouTube or direct video link" value={form.video_link} onChange={e=>setForm(f=>({...f,video_link:e.target.value}))}/>
+              <Field label="🇱🇰 Sinhala Video URL" placeholder="YouTube or direct video link" value={form.video_link_si} onChange={e=>setForm(f=>({...f,video_link_si:e.target.value}))}/>
+              <Field label="🇮🇳 Tamil Video URL" placeholder="YouTube or direct video link" value={form.video_link_ta} onChange={e=>setForm(f=>({...f,video_link_ta:e.target.value}))}/>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2 border-t border-gray-100">

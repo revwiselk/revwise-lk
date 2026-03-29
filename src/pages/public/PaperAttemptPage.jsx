@@ -99,7 +99,7 @@ export default function PaperAttemptPage() {
             id, order_index, question_text, question_si, question_ta,
             image_url, marks, question_type, model_answer,
             hint, hint_si, hint_ta,
-            explanation, explanation_si, explanation_ta, video_link,
+            explanation, explanation_si, explanation_ta, video_link, video_link_si, video_link_ta,
             paper_options(id, order_index, option_text, option_si, option_ta, is_correct, image_url)
           )`)
         .eq('paper_id', paperId).order('order_index'),
@@ -368,40 +368,46 @@ export default function PaperAttemptPage() {
                             </div>
                           </div>
 
-                          {/* Explanation — all 3 languages if available */}
-                          {(q.explanation || q.explanation_si || q.explanation_ta) && (
-                            <div className="ml-10 mb-3 p-4 bg-purple-50 rounded-xl border border-purple-100">
-                              <p className="text-xs font-bold text-purple-600 uppercase tracking-wide mb-2">Explanation</p>
-                              {q.explanation && (
-                                <div className="mb-2">
-                                  <span className="text-xs font-semibold text-gray-500">English: </span>
-                                  <span className="text-sm text-purple-900 leading-relaxed">{q.explanation}</span>
-                                </div>
-                              )}
-                              {q.explanation_si && (
-                                <div className="mb-2">
-                                  <span className="text-xs font-semibold text-gray-500">සිංහල: </span>
-                                  <span className="text-sm text-purple-900 leading-relaxed">{q.explanation_si}</span>
-                                </div>
-                              )}
-                              {q.explanation_ta && (
-                                <div>
-                                  <span className="text-xs font-semibold text-gray-500">தமிழ்: </span>
-                                  <span className="text-sm text-purple-900 leading-relaxed">{q.explanation_ta}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          {/* Explanation — current language only */}
+                          {(q.explanation || q.explanation_si || q.explanation_ta) && (() => {
+                            const exText = getExplanation(q)
+                            const langLabel = language === 'sinhala' ? '🇱🇰 සිංහල' : language === 'tamil' ? '🇮🇳 தமிழ்' : '🇬🇧 English'
+                            return exText ? (
+                              <div className="ml-10 mb-3 p-4 bg-purple-50 rounded-xl border border-purple-100">
+                                <p className="text-xs font-bold text-purple-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                  <Lightbulb size={11}/> Explanation
+                                  <span className="ml-auto text-[10px] bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full font-semibold">{langLabel}</span>
+                                </p>
+                                <p className="text-sm text-purple-900 leading-relaxed">{exText}</p>
+                              </div>
+                            ) : (
+                              <div className="ml-10 mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                                <p className="text-xs text-gray-400 italic">No explanation available in {langLabel} for this question.</p>
+                              </div>
+                            )
+                          })()}
 
-                          {/* Embedded video */}
-                          {q.video_link && (
-                            <div className="ml-10">
-                              <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2 flex items-center gap-1">
-                                <Play size={11}/> Explanation Video
-                              </p>
-                              <VideoPlayer url={q.video_link} title={`Q${qi+1} explanation`}/>
-                            </div>
-                          )}
+                          {/* Explanation Video — switches with app language */}
+                          {(() => {
+                            // Pick video per language: question-level first, fallback to paper-level
+                            const qVideo = language === 'sinhala' ? (q.video_link_si || q.video_link)
+                                         : language === 'tamil'   ? (q.video_link_ta || q.video_link)
+                                         :                          q.video_link
+                            const paperVideoField = { english: 'video_url_en', sinhala: 'video_url_si', tamil: 'video_url_ta' }
+                            const paperVideo = paper?.[paperVideoField[language]] || paper?.video_url_en || null
+                            const videoUrl = qVideo || paperVideo
+                            const langLabel = language === 'sinhala' ? '🇱🇰 සිංහල' : language === 'tamil' ? '🇮🇳 தமிழ்' : '🇬🇧 English'
+                            if (!videoUrl) return null
+                            return (
+                              <div className="ml-10 mt-3">
+                                <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                  <Play size={11}/> Explanation Video
+                                  <span className="ml-auto text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">{langLabel}</span>
+                                </p>
+                                <VideoPlayer url={videoUrl} title={`Q${qi+1} explanation`}/>
+                              </div>
+                            )
+                          })()}
                         </div>
                       )
                     })}
