@@ -5,28 +5,28 @@ import { Badge } from '@/components/ui'
 import { FileText, ChevronRight, ArrowLeft, Download, Search, GraduationCap } from 'lucide-react'
 import clsx from 'clsx'
 
-const GRADES = ['6','7','8','9','10','11']
-const TYPE_LABELS = { past_paper:'Past Paper', model_paper:'Model Paper', term_test:'Term Test', mock_exam:'Mock Exam', sample:'Sample' }
-const TYPE_ICONS = { past_paper:'📄', model_paper:'📝', term_test:'📋', mock_exam:'📊', sample:'📌' }
+const GRADES = ['6', '7', '8', '9', '10', '11']
+const TYPE_LABELS = { past_paper: 'Past Paper', model_paper: 'Model Paper', term_test: 'Term Test', mock_exam: 'Mock Exam', sample: 'Sample' }
+const TYPE_ICONS = { past_paper: '📄', model_paper: '📝', term_test: '📋', mock_exam: '📊', sample: '📌' }
 
 const SUBJECT_COLORS = {
-  Science:'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Mathematics:'bg-blue-100 text-blue-700 border-blue-200',
-  Sinhala:'bg-amber-100 text-amber-700 border-amber-200',
-  English:'bg-purple-100 text-purple-700 border-purple-200',
-  Tamil:'bg-rose-100 text-rose-700 border-rose-200',
-  History:'bg-orange-100 text-orange-700 border-orange-200',
-  Geography:'bg-teal-100 text-teal-700 border-teal-200',
-  Health:'bg-red-100 text-red-700 border-red-200',
-  Civics:'bg-indigo-100 text-indigo-700 border-indigo-200',
-  Religion:'bg-yellow-100 text-yellow-700 border-yellow-200',
-  ICT:'bg-cyan-100 text-cyan-700 border-cyan-200',
-  Art:'bg-pink-100 text-pink-700 border-pink-200',
+  Science: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Mathematics: 'bg-blue-100 text-blue-700 border-blue-200',
+  Sinhala: 'bg-amber-100 text-amber-700 border-amber-200',
+  English: 'bg-purple-100 text-purple-700 border-purple-200',
+  Tamil: 'bg-rose-100 text-rose-700 border-rose-200',
+  History: 'bg-orange-100 text-orange-700 border-orange-200',
+  Geography: 'bg-teal-100 text-teal-700 border-teal-200',
+  Health: 'bg-red-100 text-red-700 border-red-200',
+  Civics: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  Religion: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  ICT: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  Art: 'bg-pink-100 text-pink-700 border-pink-200',
 }
 
 const SUBJECT_EMOJI = {
-  Science:'🔬', Mathematics:'📐', Sinhala:'🅢', English:'🅔', Tamil:'🅣',
-  History:'🏛️', Geography:'🌍', Health:'💊', Civics:'⚖️', Religion:'🕌', ICT:'💻', Art:'🎨',
+  Science: '🔬', Mathematics: '📐', Sinhala: '🅢', English: '🅔', Tamil: '🅣',
+  History: '🏛️', Geography: '🌍', Health: '💊', Civics: '⚖️', Religion: '🕌', ICT: '💻', Art: '🎨',
 }
 
 export default function PapersPage() {
@@ -80,14 +80,14 @@ export default function PapersPage() {
           <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center">
             <GraduationCap size={20} className="text-white" />
           </div>
-          <h1 className="font-bold text-2xl sm:text-3xl text-gray-900">Past Papers</h1>
+          <h1 className="font-bold text-2xl sm:text-3xl text-gray-900">Papers</h1>
         </div>
         <p className="text-gray-500 text-sm ml-[52px]">Select your grade to browse papers by subject and type</p>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {Array(6).fill(0).map((_,i) => <div key={i} className="skeleton h-32 rounded-2xl"/>)}
+          {Array(6).fill(0).map((_, i) => <div key={i} className="skeleton h-32 rounded-2xl" />)}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -101,7 +101,7 @@ export default function PapersPage() {
                   count === 0 && 'opacity-40 cursor-not-allowed'
                 )}
                 disabled={count === 0}>
-                <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-blue-50 -translate-y-8 translate-x-8 group-hover:scale-150 transition-transform duration-500 ease-out"/>
+                <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-blue-50 -translate-y-8 translate-x-8 group-hover:scale-150 transition-transform duration-500 ease-out" />
                 <div className="relative">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white font-black text-2xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-md">
                     {grade}
@@ -123,7 +123,7 @@ export default function PapersPage() {
                     </div>
                   )}
                 </div>
-                <ChevronRight size={14} className="absolute bottom-4 right-4 text-gray-300 group-hover:text-blue-500 transition-colors"/>
+                <ChevronRight size={14} className="absolute bottom-4 right-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
               </button>
             )
           })}
@@ -139,9 +139,9 @@ export default function PapersPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6 flex-wrap">
           <button onClick={() => setSelectedGrade(null)} className="flex items-center gap-1 hover:text-blue-600 transition-colors font-medium">
-            <ArrowLeft size={13}/> Papers
+            <ArrowLeft size={13} /> Papers
           </button>
-          <ChevronRight size={13} className="text-gray-300"/>
+          <ChevronRight size={13} className="text-gray-300" />
           <span className="text-gray-900 font-semibold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg">Grade {selectedGrade}</span>
         </nav>
 
@@ -152,7 +152,7 @@ export default function PapersPage() {
 
         {subjects.length === 0 ? (
           <div className="text-center py-16 card">
-            <FileText size={36} className="text-gray-300 mx-auto mb-3"/>
+            <FileText size={36} className="text-gray-300 mx-auto mb-3" />
             <p className="font-semibold text-gray-500">No papers for Grade {selectedGrade} yet</p>
           </div>
         ) : (
@@ -206,11 +206,11 @@ export default function PapersPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6 flex-wrap">
           <button onClick={() => { setSelectedGrade(null); setSelectedSubject(null) }} className="flex items-center gap-1 hover:text-blue-600 transition-colors font-medium">
-            <ArrowLeft size={13}/> Papers
+            <ArrowLeft size={13} /> Papers
           </button>
-          <ChevronRight size={13} className="text-gray-300"/>
+          <ChevronRight size={13} className="text-gray-300" />
           <button onClick={() => setSelectedSubject(null)} className="hover:text-blue-600 transition-colors">Grade {selectedGrade}</button>
-          <ChevronRight size={13} className="text-gray-300"/>
+          <ChevronRight size={13} className="text-gray-300" />
           <span className="text-gray-900 font-semibold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg">{selectedSubject}</span>
         </nav>
 
@@ -224,7 +224,7 @@ export default function PapersPage() {
 
         {types.length === 0 ? (
           <div className="text-center py-16 card">
-            <FileText size={36} className="text-gray-300 mx-auto mb-3"/>
+            <FileText size={36} className="text-gray-300 mx-auto mb-3" />
             <p className="font-semibold text-gray-500">No papers available</p>
           </div>
         ) : (
@@ -240,7 +240,7 @@ export default function PapersPage() {
                   <p className="font-bold text-gray-900 text-lg mb-1">{TYPE_LABELS[type]}</p>
                   <p className="text-gray-500 text-sm">{count} paper{count !== 1 ? 's' : ''} available</p>
                   <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-gray-600">
-                    Browse papers <ChevronRight size={13}/>
+                    Browse papers <ChevronRight size={13} />
                   </div>
                 </button>
               )
@@ -257,13 +257,13 @@ export default function PapersPage() {
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-5 flex-wrap">
         <button onClick={() => { setSelectedGrade(null); setSelectedSubject(null); setSelectedType(null) }}
           className="flex items-center gap-1 hover:text-blue-600 transition-colors font-medium">
-          <ArrowLeft size={13}/> Papers
+          <ArrowLeft size={13} /> Papers
         </button>
-        <ChevronRight size={13} className="text-gray-300"/>
+        <ChevronRight size={13} className="text-gray-300" />
         <button onClick={() => { setSelectedSubject(null); setSelectedType(null) }} className="hover:text-blue-600 transition-colors">Grade {selectedGrade}</button>
-        <ChevronRight size={13} className="text-gray-300"/>
+        <ChevronRight size={13} className="text-gray-300" />
         <button onClick={() => setSelectedType(null)} className="hover:text-blue-600 transition-colors">{selectedSubject}</button>
-        <ChevronRight size={13} className="text-gray-300"/>
+        <ChevronRight size={13} className="text-gray-300" />
         <span className="text-gray-900 font-semibold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg">{TYPE_LABELS[selectedType]}</span>
       </nav>
 
@@ -276,14 +276,14 @@ export default function PapersPage() {
       </div>
 
       <div className="relative mb-5">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search by title or year…" className="inp pl-8 w-full text-sm"/>
+          placeholder="Search by title or year…" className="inp pl-8 w-full text-sm" />
       </div>
 
       {filteredPapers.length === 0 ? (
         <div className="text-center py-16 card">
-          <FileText size={36} className="text-gray-300 mx-auto mb-3"/>
+          <FileText size={36} className="text-gray-300 mx-auto mb-3" />
           <p className="font-semibold text-gray-500">No papers found</p>
           <p className="text-xs text-gray-400 mt-1">Try a different search</p>
         </div>
@@ -303,7 +303,7 @@ export default function PapersPage() {
                 <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
                   {p.total_marks && <span>{p.total_marks} marks</span>}
                   {p.duration_mins && <span>{p.duration_mins} min</span>}
-                  {p.pdf_url && <span className="flex items-center gap-1 text-blue-500"><Download size={10}/> PDF available</span>}
+                  {p.pdf_url && <span className="flex items-center gap-1 text-blue-500"><Download size={10} /> PDF available</span>}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -311,12 +311,12 @@ export default function PapersPage() {
                   <a href={p.pdf_url} download target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-sm"
                     onClick={e => e.stopPropagation()}>
-                    <Download size={13}/> Download
+                    <Download size={13} /> Download
                   </a>
                 )}
                 <button onClick={() => navigate(`/papers/${p.id}`)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">
-                  Open <ChevronRight size={13}/>
+                  Open <ChevronRight size={13} />
                 </button>
               </div>
             </div>
