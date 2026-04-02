@@ -74,9 +74,12 @@ export default function AdminPaperQuestions() {
 
   const fetchData = async () => {
     setLoading(true)
-    const [sRes,qRes] = await Promise.all([
-      supabaseAdmin.from('al_paper_sections').select('id,title,section_type,marks,paper_id,al_papers(title,al_streams(name),al_subjects(name))').eq('id',sectionId).single(),
-      supabaseAdmin.from('al_paper_questions').select('*,paper_options(*)').eq('section_id',sectionId).order('order_index'),
+    const [sRes, qRes] = await Promise.all([
+        supabaseAdmin.from('al_paper_sections').select('...').eq('id', sectionId).single(),
+        supabaseAdmin.from('al_paper_questions')
+          .select('*, al_paper_options(*)') // Add 'al_' here
+          .eq('section_id', sectionId)
+          .order('order_index'),
     ])
     if(sRes.data) setSection(sRes.data)
     setQuestions((qRes.data||[]).map(q=>({...q,paper_options:(q.paper_options||[]).sort((a,b)=>a.order_index-b.order_index)})))
