@@ -28,7 +28,7 @@ export default function ALHomePage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-violet-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <div className="w-16 h-16 rounded-2xl bg-blue-700 flex items-center justify-center mx-auto mb-4 shadow-lg">
           <GraduationCap size={32} className="text-white"/>
         </div>
         <h1 className="font-bold text-3xl text-gray-900 mb-2">A/L Learning Hub</h1>
