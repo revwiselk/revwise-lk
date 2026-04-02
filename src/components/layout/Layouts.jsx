@@ -4,27 +4,45 @@ import Navbar from './Navbar'
 import { useAuthStore } from '@/store/authStore'
 import {
   LayoutDashboard, BookOpen, Users, MessageSquare,
-  LogOut, Menu, X, ChevronLeft, Shield, BarChart2, FileText
+  LogOut, Menu, ChevronLeft, Shield, BarChart2, FileText,
+  GraduationCap, Layers, BookMarked
 } from 'lucide-react'
 import clsx from 'clsx'
 
-const ADMIN_NAV = [
-  { to: '/admin',           icon: LayoutDashboard, label: 'Dashboard',  exact: true },
-  { to: '/admin/subjects',  icon: BookOpen,        label: 'Curriculum'  },
-  { to: '/admin/papers',    icon: FileText,        label: 'Papers'      },
-  { to: '/admin/students',  icon: Users,           label: 'Students'    },
-  { to: '/admin/feedback',  icon: MessageSquare,   label: 'Feedback'    },
-  { to: '/admin/analytics', icon: BarChart2,        label: 'Analytics'  },
+// ── Single unified admin nav — split into sections ─────────────
+const NAV_SECTIONS = [
+  {
+    label: null,  // no heading for top section
+    items: [
+      { to: '/admin',           icon: LayoutDashboard, label: 'Dashboard', exact: true },
+    ]
+  },
+  {
+    label: 'Grade 6–11',
+    items: [
+      { to: '/admin/subjects',  icon: BookOpen,      label: 'Curriculum' },
+      { to: '/admin/papers',    icon: FileText,      label: 'Papers'     },
+      { to: '/admin/students',  icon: Users,         label: 'Students'   },
+      { to: '/admin/feedback',  icon: MessageSquare, label: 'Feedback'   },
+      { to: '/admin/analytics', icon: BarChart2,     label: 'Analytics'  },
+    ]
+  },
+  {
+    label: 'A/L Section',
+    accent: 'violet',
+    items: [
+      { to: '/admin/al/streams',  icon: Layers,       label: 'Streams'  },
+      { to: '/admin/al/subjects', icon: BookOpen,     label: 'Subjects' },
+      { to: '/admin/al/content',  icon: BookMarked,   label: 'Content'  },
+      { to: '/admin/al/papers',   icon: FileText,     label: 'Papers'   },
+    ]
+  },
 ]
 
 function AdminSidebar({ collapsed, onClose }) {
   const { profile, signOut } = useAuthStore()
   const navigate = useNavigate()
-
-  const handleSignOut = async () => {
-    await signOut()
-    navigate('/login')
-  }
+  const handleSignOut = async () => { await signOut(); navigate('/login') }
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
@@ -36,25 +54,53 @@ function AdminSidebar({ collapsed, onClose }) {
         {!collapsed && (
           <div>
             <p className="font-bold text-gray-900 text-sm leading-none">RevWise.lk</p>
-            <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><Shield size={9}/> Admin Panel</p>
+            <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+              <Shield size={9}/> Admin Panel
+            </p>
           </div>
         )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
-        {ADMIN_NAV.map(({ to, icon: Icon, label, exact }) => (
-          <NavLink key={to} to={to} end={exact} onClick={onClose}
-            className={({ isActive }) => clsx(
-              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
-              collapsed && 'justify-center px-2',
-              isActive
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            )}>
-            <Icon size={18} className="shrink-0"/>
-            {!collapsed && label}
-          </NavLink>
+      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-4">
+        {NAV_SECTIONS.map((section, si) => (
+          <div key={si}>
+            {/* Section label */}
+            {section.label && !collapsed && (
+              <div className={clsx('flex items-center gap-2 px-3 mb-1.5',)}>
+                {section.accent === 'violet' && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0"/>
+                )}
+                <span className={clsx('text-xs font-bold uppercase tracking-wider',
+                  section.accent === 'violet' ? 'text-violet-500' : 'text-gray-400'
+                )}>
+                  {section.label}
+                </span>
+              </div>
+            )}
+            {section.label && collapsed && (
+              <div className="flex justify-center mb-1">
+                <div className={clsx('w-4 h-px', section.accent === 'violet' ? 'bg-violet-300' : 'bg-gray-200')}/>
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {section.items.map(({ to, icon: Icon, label, exact }) => (
+                <NavLink key={to} to={to} end={exact} onClick={onClose}
+                  className={({ isActive }) => clsx(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+                    collapsed && 'justify-center px-2',
+                    isActive
+                      ? section.accent === 'violet'
+                        ? 'bg-violet-600 text-white shadow-sm'
+                        : 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  )}>
+                  <Icon size={18} className="shrink-0"/>
+                  {!collapsed && label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
@@ -62,12 +108,12 @@ function AdminSidebar({ collapsed, onClose }) {
       <div className="border-t border-gray-100 p-3 space-y-1">
         <div className={clsx('flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gray-50', collapsed && 'justify-center')}>
           <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
-            <span className="text-white text-xs font-bold">{(profile?.full_name || 'A')[0].toUpperCase()}</span>
+            <span className="text-white text-xs font-bold">{(profile?.full_name||'A')[0].toUpperCase()}</span>
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">{profile?.full_name || 'Admin'}</p>
-              <p className="text-xs text-blue-600">{profile?.email || ''}</p>
+              <p className="text-sm font-medium text-gray-800 truncate">{profile?.full_name||'Admin'}</p>
+              <p className="text-xs text-blue-600">{profile?.email||''}</p>
             </div>
           )}
         </div>
@@ -87,7 +133,7 @@ export function PublicLayout() {
       <Navbar/>
       <main className="flex-1"><Outlet/></main>
       <footer className="border-t border-gray-200 bg-white py-4 text-center">
-        <p className="text-gray-400 text-xs">© {new Date().getFullYear()} RevWise.lk — Sri Lanka Government Syllabus · Grade 6–11</p>
+        <p className="text-gray-400 text-xs">© {new Date().getFullYear()} RevWise.lk — Sri Lanka Government Syllabus · Grade 6–11 & A/L</p>
       </footer>
     </div>
   )
@@ -104,14 +150,10 @@ export function AdminLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Desktop sidebar */}
-      <aside className={clsx(
-        'hidden lg:flex flex-col shrink-0 transition-all duration-200 relative',
-        collapsed ? 'w-16' : 'w-60'
-      )}>
+      <aside className={clsx('hidden lg:flex flex-col shrink-0 transition-all duration-200 relative', collapsed ? 'w-16' : 'w-60')}>
         <div className="sticky top-0 h-screen overflow-hidden">
           <AdminSidebar collapsed={collapsed}/>
         </div>
-        {/* Collapse toggle */}
         <button onClick={() => setCollapsed(!collapsed)}
           className="absolute -right-3 top-6 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-700 z-10">
           <ChevronLeft size={12} className={clsx('transition-transform', collapsed && 'rotate-180')}/>
@@ -128,16 +170,15 @@ export function AdminLayout() {
         </div>
       )}
 
-      {/* Main content */}
+      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile top bar */}
         <header className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 h-14 flex items-center gap-3">
           <button onClick={() => setMobileOpen(true)} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100">
             <Menu size={20}/>
           </button>
           <span className="font-bold text-gray-900">Admin Panel</span>
         </header>
-        <main className="flex-1 p-6 max-w-6xl mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-6 max-w-6xl mx-auto w-full">
           <Outlet/>
         </main>
       </div>

@@ -12,9 +12,8 @@ export const useAuthStore = create(
 
       setLoading: (v) => set({ loading: v }),
 
-      // Called after Supabase auth sign-in
       loadProfile: async (userId, email) => {
-        // 1. Check admin_profiles by email
+        // 1. Check admin_profiles
         const { data: adminRow } = await supabaseAdmin
           .from('admin_profiles')
           .select('id, email, full_name')
@@ -27,7 +26,7 @@ export const useAuthStore = create(
           return 'admin'
         }
 
-        // 2. Check student_profiles
+        // 2. Student
         const { data: studentRow } = await supabase
           .from('student_profiles')
           .select('*')
@@ -44,9 +43,7 @@ export const useAuthStore = create(
       },
 
       setProfile: (profile) => set({ profile }),
-
       clear: () => set({ user: null, profile: null, role: null, loading: false }),
-
       signOut: async () => {
         await supabase.auth.signOut()
         set({ user: null, profile: null, role: null })
@@ -54,7 +51,7 @@ export const useAuthStore = create(
     }),
     {
       name: 'RevWise',
-      partialize: () => ({}), // don't persist — re-check on page load for security
+      partialize: () => ({}),
     }
   )
 )

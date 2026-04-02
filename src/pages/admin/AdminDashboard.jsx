@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabaseAdmin } from '@/lib/supabase'
-import { BookOpen, Layers, HelpCircle, Users, TrendingUp, MessageSquare, ChevronRight, Award, BarChart2, FileText } from 'lucide-react'
+import { BookOpen, Layers, HelpCircle, Users, TrendingUp, MessageSquare, ChevronRight, Award, BarChart2, FileText, GraduationCap } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function AdminDashboard() {
@@ -10,6 +10,7 @@ export default function AdminDashboard() {
     subjects:0, chapters:0, units:0, questions:0,
     students:0, attempts:0, feedback:0, passed:0,
     papers:0, paperAttempts:0,
+    alStreams:0, alSubjects:0, alChapters:0,
   })
   const [recentStudents, setRecentStudents] = useState([])
   const [recentQuizAttempts, setRecentQuizAttempts] = useState([])
@@ -37,7 +38,10 @@ export default function AdminDashboard() {
       safe(supabaseAdmin.from('quiz_attempts').select('id', { count:'exact', head:true }).eq('passed', true)),
       safe(supabaseAdmin.from('papers').select('id', { count:'exact', head:true })),
       safe(supabaseAdmin.from('paper_attempts').select('id', { count:'exact', head:true })),
-      // Recent students
+      safe(supabaseAdmin.from('al_streams').select('id', { count:'exact', head:true })),
+      safe(supabaseAdmin.from('al_subjects').select('id', { count:'exact', head:true })),
+      safe(supabaseAdmin.from('al_chapters').select('id', { count:'exact', head:true })),
+      // Recent lists
       safe(supabaseAdmin.from('student_profiles')
         .select('id, full_name, grade, school_name, created_at')
         .order('created_at', { ascending:false }).limit(8)),
@@ -58,12 +62,13 @@ export default function AdminDashboard() {
           papers!paper_attempts_paper_id_fkey(title, subject, grade, paper_type)`)
         .not('submitted_at','is',null)
         .order('submitted_at', { ascending:false }).limit(8)),
-    ]).then(([s,ch,u,q,st,att,fb,passed,papers,paperAtt,recSt,recQA,recPA]) => {
+    ]).then(([s,ch,u,q,st,att,fb,passed,papers,paperAtt,alStr,alSub,alCh,recSt,recQA,recPA]) => {
       setStats({
         subjects:  s.count||0,  chapters: ch.count||0, units:    u.count||0,
         questions: q.count||0,  students: st.count||0, attempts: att.count||0,
         feedback:  fb.count||0, passed:   passed.count||0,
         papers: papers.count||0, paperAttempts: paperAtt.count||0,
+        alStreams: alStr.count||0, alSubjects: alSub.count||0, alChapters: alCh.count||0,
       })
       setRecentStudents(recSt.data||[])
       setRecentQuizAttempts(recQA.data||[])
@@ -81,6 +86,12 @@ export default function AdminDashboard() {
     { label:'Pass Rate',     value:stats.attempts>0?Math.round((stats.passed/stats.attempts)*100)+'%':'—', icon:Award, color:'bg-emerald-50 text-emerald-600' },
     { label:'Papers',        value:stats.papers,     icon:FileText,      color:'bg-indigo-50 text-indigo-600', link:'/admin/papers'   },
     { label:'Feedback',      value:stats.feedback,   icon:MessageSquare, color:'bg-rose-50 text-rose-600',    link:'/admin/feedback'  },
+  ]
+
+  const alStatCards = [
+    { label:'AL Streams',   value:stats.alStreams,   icon:GraduationCap, color:'bg-violet-50 text-violet-600', link:'/admin/al/streams'  },
+    { label:'AL Subjects',  value:stats.alSubjects,  icon:BookOpen,      color:'bg-indigo-50 text-indigo-600', link:'/admin/al/subjects' },
+    { label:'AL Chapters',  value:stats.alChapters,  icon:Layers,        color:'bg-cyan-50 text-cyan-600',    link:'/admin/al/content'  },
   ]
 
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) : '—'
@@ -111,6 +122,28 @@ export default function AdminDashboard() {
             <div className="text-xs text-gray-400 mt-0.5 leading-tight">{c.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* A/L Section */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1.5 h-5 rounded-full bg-violet-500"/>
+          <h2 className="font-bold text-gray-900">A/L Section</h2>
+          <span className="text-xs text-gray-400">Advanced Level</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {alStatCards.map(c2 => (
+            <div key={c2.label}
+              onClick={c2.link ? () => navigate(c2.link) : undefined}
+              className={clsx('card p-4 text-center', c2.link && 'cursor-pointer hover:shadow-md transition-shadow')}>
+              <div className={`w-9 h-9 rounded-xl ${c2.color} flex items-center justify-center mx-auto mb-2`}>
+                <c2.icon size={16}/>
+              </div>
+              <div className="font-bold text-xl text-gray-900">{loading ? '–' : c2.value}</div>
+              <div className="text-xs text-gray-400 mt-0.5 leading-tight">{c2.label}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -246,6 +279,8 @@ export default function AdminDashboard() {
           { title:'View Students',   desc:'Browse by grade, district, school',  to:'/admin/students',  icon:Users,         color:'bg-green-50 text-green-600'   },
           { title:'Feedback',        desc:'Student feedback on quizzes',        to:'/admin/feedback',  icon:MessageSquare, color:'bg-rose-50 text-rose-600'     },
           { title:'Analytics',       desc:'Quiz performance & pass rates',      to:'/admin/analytics', icon:BarChart2,     color:'bg-amber-50 text-amber-600'   },
+          { title:'A/L Streams',     desc:'Manage A/L streams & subjects',      to:'/admin/al/streams',  icon:GraduationCap, color:'bg-violet-50 text-violet-600' },
+          { title:'A/L Content',     desc:'Chapters, units, sub-units',         to:'/admin/al/content',  icon:Layers,        color:'bg-indigo-50 text-indigo-600' },
         ].map(a => (
           <div key={a.title} onClick={()=>navigate(a.to)}
             className="card p-4 flex items-start gap-3 cursor-pointer hover:shadow-md transition-all group">
